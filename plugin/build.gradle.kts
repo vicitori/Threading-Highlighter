@@ -17,8 +17,7 @@ repositories {
 dependencies {
     implementation(project(":common"))
     intellijPlatform {
-        // Target the local test IDE (IntelliJ IDEA Community 2025.1, build 251)
-        intellijIdeaCommunity("2025.1.1.1")
+        intellijIdeaUltimate("2025.3.1")
         bundledPlugin("org.jetbrains.kotlin")
     }
 
@@ -35,8 +34,8 @@ dependencies {
 intellijPlatform {
     pluginConfiguration {
         ideaVersion {
-            sinceBuild = "251"
-            untilBuild = "251.*"
+            sinceBuild = "253"
+            untilBuild = "253.*"
         }
     }
 
