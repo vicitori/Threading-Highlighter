@@ -1,0 +1,28 @@
+<idea-plugin>
+    <id>io.github.vicitori.threading.highlighter.examples</id>
+    <name>Highlighter Examples</name>
+    <vendor>Vicitori</vendor>
+
+    <description><![CDATA[
+    The set of examples demonstrating typical threading bugs in IntelliJ plugins.
+    ]]></description>
+
+    <idea-version since-build="253" until-build="253.*"/>
+
+    <depends>com.intellij.modules.platform</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <notificationGroup id="Main Group" displayType="BALLOON"/>
+    </extensions>
+
+    <actions>
+        <group id="io.github.vicitori.threading.highlighter.examples.MainGroup" text="Slow EDT Examples" popup="true">
+            <action id="io.github.vicitori.threading.highlighter.examples.SlowOperationOnEdtAction"
+                    class="io.github.vicitori.threading.highlighter.examples.SlowOperationOnEdtAction"
+                    text="Trigger Slow EDT Operation"
+                    description="Performs slow operations on EDT">
+                <keyboard-shortcut keymap="$default" first-keystroke="shift X"/>
+            </action>
+        </group>
+    </actions>
+</idea-plugin>

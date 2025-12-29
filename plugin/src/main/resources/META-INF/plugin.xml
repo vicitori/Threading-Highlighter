@@ -1,0 +1,39 @@
+<idea-plugin>
+    <id>io.github.vicitori.threading.highlighter</id>
+    <name>ij-threading-highlighter</name>
+    <vendor>Vicitori</vendor>
+
+    <description>
+        Highlights runtime threading-model marker call paths (MVP).
+    </description>
+
+    <depends>com.intellij.modules.platform</depends>
+    <depends>org.jetbrains.kotlin</depends>
+
+    <extensions defaultExtensionNs="org.jetbrains.kotlin">
+        <supportsKotlinPluginMode supportsK2="true"/>
+    </extensions>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <lineMarkerProvider language="kotlin"
+                            implementationClass="io.github.vicitori.threading.highlighter.plugin.gutter.ThreadingGutterLineMarkerProvider"/>
+        <lineMarkerProvider language="JAVA"
+                            implementationClass="io.github.vicitori.threading.highlighter.plugin.gutter.ThreadingGutterLineMarkerProvider"/>
+    </extensions>
+
+    <actions>
+        <action id="ThreadingHighlighter.ReloadTrace"
+                class="io.github.vicitori.threading.highlighter.plugin.actions.ReloadTraceAction"
+                text="Reload Threading Trace"
+                description="Reload .ij-threading-highlighter/trace.jsonl and refresh gutter icons"/>
+        <action id="ThreadingHighlighter.ClearMarkers"
+                class="io.github.vicitori.threading.highlighter.plugin.actions.ClearMarkersAction"
+                text="Clear Threading Markers" description="Remove all threading trace gutter icons"/>
+
+        <group id="ThreadingHighlighter.Group" text="Threading Highlighter" popup="true">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+            <action-ref id="ThreadingHighlighter.ReloadTrace"/>
+            <action-ref id="ThreadingHighlighter.ClearMarkers"/>
+        </group>
+    </actions>
+</idea-plugin>
