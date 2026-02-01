@@ -15,6 +15,7 @@ repositories {
 }
 
 dependencies {
+    implementation(project(":common"))
     intellijPlatform {
         intellijIdeaUltimate("2025.3.1")
         bundledPlugin("org.jetbrains.kotlin")

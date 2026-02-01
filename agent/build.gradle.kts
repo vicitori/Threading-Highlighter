@@ -8,6 +8,7 @@ kotlin {
 }
 
 dependencies {
+    implementation(project(":common"))
     implementation("net.bytebuddy:byte-buddy:1.15.11")
     implementation("net.bytebuddy:byte-buddy-agent:1.15.11")
 }
