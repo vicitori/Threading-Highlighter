@@ -2,17 +2,18 @@ package io.github.vicitori.threading.highlighter.agent;
 
 import io.github.vicitori.threading.highlighter.agent.instruction.InstructionWriter;
 import io.github.vicitori.threading.highlighter.agent.marker.MarkerAdvice;
+import io.github.vicitori.threading.highlighter.common.marker.MarkerInfo;
+import io.github.vicitori.threading.highlighter.common.marker.Markers;
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.asm.Advice;
 import net.bytebuddy.matcher.ElementMatchers;
 
 import java.lang.instrument.Instrumentation;
-
-import static io.github.vicitori.threading.highlighter.agent.marker.Markers.SLOW_OPERATION;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.List;
 
 public final class ThreadingHighlighterAgent {
-
-    private static final String TARGET_CLASS_FQN = SLOW_OPERATION.classFqn();
 
     public static void premain(String agentArgs, Instrumentation inst) {
         System.err.println("[ThreadingHighlighterAgent] installed");
@@ -22,7 +23,46 @@ public final class ThreadingHighlighterAgent {
         System.err.println("[ThreadingHighlighterAgent] trace directory: " + writer.getInstructionsDir());
         System.err.println("[ThreadingHighlighterAgent] trace files will be named: <markerFqn>.jsonl");
 
-        configureAgent().type(ElementMatchers.named(TARGET_CLASS_FQN)).transform((builder, typeDescription, classLoader, module, protectionDomain) -> builder.visit(Advice.to(MarkerAdvice.class).on(ElementMatchers.named(SLOW_OPERATION.methodName())))).installOn(inst);
+        AgentBuilder agent = configureAgent();
+        List<MarkerInfo> markers = getAllMarkers();
+
+        System.err.println("[ThreadingHighlighterAgent] Found " + markers.size() + " markers to instrument");
+
+        for (MarkerInfo marker : markers) {
+            instrumentMarker(agent, marker, inst);
+        }
+
+        System.err.println("[ThreadingHighlighterAgent] Instrumented " + markers.size() + " markers");
+    }
+
+    private static List<MarkerInfo> getAllMarkers() {
+        List<MarkerInfo> markers = new ArrayList<>();
+        try {
+            Field[] fields = Markers.class.getDeclaredFields();
+            for (Field field : fields) {
+                if (field.getType() == MarkerInfo.class) {
+                    field.setAccessible(true);
+                    MarkerInfo marker = (MarkerInfo) field.get(null);
+                    markers.add(marker);
+                    System.err.println("[ThreadingHighlighterAgent] Discovered marker: " + marker.markerFqn());
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("[ThreadingHighlighterAgent] ERROR: Failed to discover markers");
+            System.err.println("[ThreadingHighlighterAgent] Exception: " + e.getClass().getName() + ": " + e.getMessage());
+            for (StackTraceElement element : e.getStackTrace()) {
+                System.err.println("[ThreadingHighlighterAgent]   at " + element);
+            }
+        }
+        return markers;
+    }
+
+    private static void instrumentMarker(AgentBuilder agent, MarkerInfo marker, Instrumentation inst) {
+        agent.type(ElementMatchers.named(marker.classFqn))
+                .transform((builder, typeDescription, classLoader, module, protectionDomain) ->
+                        builder.visit(Advice.to(MarkerAdvice.class).on(ElementMatchers.named(marker.methodName))))
+                .installOn(inst);
+        System.err.println("[ThreadingHighlighterAgent] Instrumented: " + marker.markerFqn());
     }
 
     private static AgentBuilder configureAgent() {

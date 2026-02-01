@@ -16,12 +16,26 @@
     </extensions>
 
     <actions>
-        <group id="io.github.vicitori.threading.highlighter.examples.MainGroup" text="Slow EDT Examples" popup="true">
+        <group id="io.github.vicitori.threading.highlighter.examples.MainGroup" text="Threading Marker Examples" popup="true">
             <action id="io.github.vicitori.threading.highlighter.examples.SlowOperationOnEdtAction"
                     class="io.github.vicitori.threading.highlighter.examples.SlowOperationOnEdtAction"
-                    text="Trigger Slow EDT Operation"
-                    description="Performs slow operations on EDT">
+                    text="All Markers (Combined Example)"
+                    description="Demonstrates all three threading markers: SLOW_OPERATION, EDT, and NON_EDT">
                 <keyboard-shortcut keymap="$default" first-keystroke="shift X"/>
+            </action>
+
+            <action id="io.github.vicitori.threading.highlighter.examples.EdtMarkerAction"
+                    class="io.github.vicitori.threading.highlighter.examples.EdtMarkerAction"
+                    text="EDT Marker Only"
+                    description="Demonstrates assertIsDispatchThread() marker">
+                <keyboard-shortcut keymap="$default" first-keystroke="shift E"/>
+            </action>
+
+            <action id="io.github.vicitori.threading.highlighter.examples.NonEdtMarkerAction"
+                    class="io.github.vicitori.threading.highlighter.examples.NonEdtMarkerAction"
+                    text="Non-EDT Marker Only"
+                    description="Demonstrates assertIsNonDispatchThread() marker">
+                <keyboard-shortcut keymap="$default" first-keystroke="shift N"/>
             </action>
         </group>
     </actions>
