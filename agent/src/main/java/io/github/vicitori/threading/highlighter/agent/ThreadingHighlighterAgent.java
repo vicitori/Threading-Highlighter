@@ -22,7 +22,8 @@ public final class ThreadingHighlighterAgent {
         MarkerAdvice.setWriter(writer);
         MarkerAdvice.setFilter(filter);
 
-        System.err.println("[ThreadingHighlighterAgent] trace file: " + writer.getTracePath());
+        System.err.println("[ThreadingHighlighterAgent] trace directory: " + writer.getTraceDir());
+        System.err.println("[ThreadingHighlighterAgent] trace files will be named: <markerFqn>.jsonl");
 
         configureAgent()
                 .type(ElementMatchers.named(TARGET_CLASS_FQN))
