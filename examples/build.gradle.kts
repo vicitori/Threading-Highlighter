@@ -42,7 +42,7 @@ tasks {
     runIde {
         jvmArgs(
             "-javaagent:${project.rootProject.projectDir}/agent/build/libs/agent.jar",
-            "-Dthreading.highlighter.trace.dir=${project.rootProject.projectDir}/examples",
+            "-Dthreading.highlighter.instructions.dir=${project.rootProject.projectDir}/examples",
             "-Dthreading.highlighter.user.package=io.github.vicitori.threading.highlighter.examples"
         )
     }

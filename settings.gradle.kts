@@ -4,6 +4,7 @@ plugins {
 
 rootProject.name = "ThreadingHighlighter"
 
+include(":common")
 include(":agent")
 include(":plugin")
 include(":examples")
