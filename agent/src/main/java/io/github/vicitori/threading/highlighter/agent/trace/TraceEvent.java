@@ -21,7 +21,7 @@ public record TraceEvent(
     public String toJsonLine() {
         StringBuilder sb = new StringBuilder(4096);
         sb.append('{');
-        sb.append("\"markerFqn\":\"").append(escape(markerFqn())).append("\",");
+        sb.append("\"markerFqn\":\"").append(escape(markerFqn())).append("\"");
         sb.append(",");
         sb.append("\"timestampEpochMillis\":").append(timestampMillis());
         sb.append(",");
