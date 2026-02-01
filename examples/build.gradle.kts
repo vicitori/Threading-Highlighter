@@ -35,6 +35,10 @@ kotlin {
 }
 
 tasks {
+    buildSearchableOptions {
+        enabled = false
+    }
+
     runIde {
         jvmArgs(
             "-javaagent:${project.rootProject.projectDir}/agent/build/libs/agent.jar",
