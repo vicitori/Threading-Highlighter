@@ -1,7 +1,6 @@
 package io.github.vicitori.threading.highlighter.agent;
 
 import io.github.vicitori.threading.highlighter.agent.marker.MarkerAdvice;
-import io.github.vicitori.threading.highlighter.agent.trace.TraceFilter;
 import io.github.vicitori.threading.highlighter.agent.trace.TraceWriter;
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.asm.Advice;
@@ -18,9 +17,7 @@ public final class ThreadingHighlighterAgent {
     public static void premain(String agentArgs, Instrumentation inst) {
         System.err.println("[ThreadingHighlighterAgent] installed");
         TraceWriter writer = new TraceWriter();
-        TraceFilter filter = new TraceFilter();
         MarkerAdvice.setWriter(writer);
-        MarkerAdvice.setFilter(filter);
 
         System.err.println("[ThreadingHighlighterAgent] trace directory: " + writer.getTraceDir());
         System.err.println("[ThreadingHighlighterAgent] trace files will be named: <markerFqn>.jsonl");
