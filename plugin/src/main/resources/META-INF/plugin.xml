@@ -1,11 +1,26 @@
 <idea-plugin>
     <id>io.github.vicitori.threading.highlighter</id>
-    <name>ij-threading-highlighter</name>
+    <name>Threading Highlighter</name>
     <vendor>Vicitori</vendor>
 
-    <description>
-        Highlights runtime threading-model marker call paths (MVP).
-    </description>
+    <description><![CDATA[
+        Visualizes IntelliJ Platform threading contracts in your code.
+        <br/><br/>
+        Shows gutter icons where EDT/non-EDT assertions and slow operation checks occur at runtime.
+        Helps developers understand and debug threading requirements in IntelliJ Platform plugins.
+        <br/><br/>
+        <b>Requires:</b> Running IDE with the Threading Highlighter Java agent.
+    ]]></description>
+
+    <change-notes><![CDATA[
+        <h3>0.1.0-SNAPSHOT</h3>
+        <ul>
+            <li>Initial release</li>
+            <li>Support for EDT, non-EDT, and slow operation markers</li>
+            <li>Automatic trace file watching with debouncing</li>
+            <li>Fast O(1) trace queries with indexed cache</li>
+        </ul>
+    ]]></change-notes>
 
     <depends>com.intellij.modules.platform</depends>
     <depends>org.jetbrains.kotlin</depends>
@@ -15,25 +30,36 @@
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij">
-        <lineMarkerProvider language="kotlin"
-                            implementationClass="io.github.vicitori.threading.highlighter.plugin.gutter.ThreadingGutterLineMarkerProvider"/>
-        <lineMarkerProvider language="JAVA"
-                            implementationClass="io.github.vicitori.threading.highlighter.plugin.gutter.ThreadingGutterLineMarkerProvider"/>
+        <annotator language="kotlin"
+                   implementationClass="io.github.vicitori.threading.highlighter.plugin.annotator.ThreadingMarkerAnnotator"/>
+        <annotator language="JAVA"
+                   implementationClass="io.github.vicitori.threading.highlighter.plugin.annotator.ThreadingMarkerAnnotator"/>
+
+        <projectActivity implementation="io.github.vicitori.threading.highlighter.plugin.startup.TraceLoaderStartupActivity"/>
+
+        <notificationGroup id="Threading Highlighter" displayType="BALLOON"/>
     </extensions>
 
     <actions>
-        <action id="ThreadingHighlighter.ReloadTrace"
-                class="io.github.vicitori.threading.highlighter.plugin.actions.ReloadTraceAction"
-                text="Reload Threading Trace"
-                description="Reload .ij-threading-highlighter/trace.jsonl and refresh gutter icons"/>
-        <action id="ThreadingHighlighter.ClearMarkers"
-                class="io.github.vicitori.threading.highlighter.plugin.actions.ClearMarkersAction"
-                text="Clear Threading Markers" description="Remove all threading trace gutter icons"/>
-
         <group id="ThreadingHighlighter.Group" text="Threading Highlighter" popup="true">
             <add-to-group group-id="ToolsMenu" anchor="last"/>
-            <action-ref id="ThreadingHighlighter.ReloadTrace"/>
-            <action-ref id="ThreadingHighlighter.ClearMarkers"/>
+
+                    <action id="ThreadingHighlighter.ReloadTrace"
+                            class="io.github.vicitori.threading.highlighter.plugin.actions.ReloadTraceAction"
+                            text="Reload Threading Traces"
+                            description="Reload trace files from .ij-threading-highlighter directory and refresh gutter icons"/>
+                    <action id="ThreadingHighlighter.ToggleMarkers"
+                            class="io.github.vicitori.threading.highlighter.plugin.actions.ToggleMarkersAction"
+                            text="Toggle Markers"
+                            description="Show or hide threading marker gutter icons"/>
+                    <action id="ThreadingHighlighter.ClearMarkers"
+                            class="io.github.vicitori.threading.highlighter.plugin.actions.ClearMarkersAction"
+                            text="Clear All Markers"
+                            description="Clear all trace data and remove gutter icons"/>
+                    <action id="ThreadingHighlighter.ShowTraceSummary"
+                            class="io.github.vicitori.threading.highlighter.plugin.actions.ShowTraceSummaryAction"
+                            text="Show Trace Summary"
+                            description="Display diagnostic summary of loaded traces (for debugging)"/>
         </group>
     </actions>
 </idea-plugin>
