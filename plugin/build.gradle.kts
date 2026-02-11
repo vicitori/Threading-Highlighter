@@ -16,8 +16,9 @@ repositories {
 
 dependencies {
     implementation(project(":common"))
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
     intellijPlatform {
-        intellijIdeaUltimate("2025.3.1")
+        intellijIdeaCommunity("2025.1.1.1")
         bundledPlugin("org.jetbrains.kotlin")
     }
 }
@@ -25,7 +26,7 @@ dependencies {
 intellijPlatform {
     pluginConfiguration {
         ideaVersion {
-            sinceBuild = "253"
+            sinceBuild = "251"
             untilBuild = "253.*"
         }
     }
