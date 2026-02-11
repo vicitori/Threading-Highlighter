@@ -12,18 +12,25 @@ class NonEdtMarkerAction : AnAction() {
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
         val application = ApplicationManager.getApplication()
-        showNotification(project, "Starting background thread...")
+
+        showNotification(project, "Starting background task...")
         application.executeOnPooledThread {
             application.assertIsNonDispatchThread()
-            Thread.sleep(500)
+            performBackgroundWork()
             application.invokeLater {
                 showNotification(project, "Background work completed (was on non-EDT thread)")
             }
         }
     }
 
+    private fun performBackgroundWork() {
+        Thread.sleep(500)
+    }
+
     private fun showNotification(project: Project, message: String) {
-        NotificationGroupManager.getInstance().getNotificationGroup("Main Group")
-            .createNotification(message, NotificationType.INFORMATION).notify(project)
+        NotificationGroupManager.getInstance()
+            .getNotificationGroup("Main Group")
+            .createNotification(message, NotificationType.INFORMATION)
+            .notify(project)
     }
 }
