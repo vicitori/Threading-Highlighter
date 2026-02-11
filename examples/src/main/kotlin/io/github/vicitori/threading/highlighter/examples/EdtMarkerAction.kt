@@ -13,11 +13,13 @@ class EdtMarkerAction : AnAction() {
         val project = e.project ?: return
         val application = ApplicationManager.getApplication()
         application.assertIsDispatchThread()
-        showNotification(project, "Running on EDT (Event Dispatch Thread)")
+        showNotification(project)
     }
 
-    private fun showNotification(project: Project, message: String) {
-        NotificationGroupManager.getInstance().getNotificationGroup("Main Group")
-            .createNotification(message, NotificationType.INFORMATION).notify(project)
+    private fun showNotification(project: Project) {
+        NotificationGroupManager.getInstance()
+            .getNotificationGroup("Main Group")
+            .createNotification("EDT assertion passed - running on Event Dispatch Thread", NotificationType.INFORMATION)
+            .notify(project)
     }
 }

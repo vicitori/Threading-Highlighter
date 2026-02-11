@@ -12,11 +12,18 @@ class SlowOperationOnEdtAction : AnAction() {
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
         SlowOperations.assertSlowOperationsAreAllowed()
-        showNotification(project, "Completed!")
+        performSlowOperation()
+        showNotification(project)
     }
 
-    private fun showNotification(project: Project, message: String) {
-        NotificationGroupManager.getInstance().getNotificationGroup("Main Group")
-            .createNotification(message, NotificationType.INFORMATION).notify(project)
+    private fun performSlowOperation() {
+        Thread.sleep(100)
+    }
+
+    private fun showNotification(project: Project) {
+        NotificationGroupManager.getInstance()
+            .getNotificationGroup("Main Group")
+            .createNotification("Slow operation completed on EDT", NotificationType.INFORMATION)
+            .notify(project)
     }
 }
