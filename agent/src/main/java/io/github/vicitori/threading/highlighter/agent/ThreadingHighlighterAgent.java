@@ -1,7 +1,7 @@
 package io.github.vicitori.threading.highlighter.agent;
 
-import io.github.vicitori.threading.highlighter.agent.instruction.InstructionWriter;
 import io.github.vicitori.threading.highlighter.agent.marker.MarkerAdvice;
+import io.github.vicitori.threading.highlighter.agent.trace.TraceWriter;
 import io.github.vicitori.threading.highlighter.common.marker.MarkerInfo;
 import io.github.vicitori.threading.highlighter.common.marker.Markers;
 import net.bytebuddy.agent.builder.AgentBuilder;
@@ -16,23 +16,13 @@ import java.util.List;
 public final class ThreadingHighlighterAgent {
 
     public static void premain(String agentArgs, Instrumentation inst) {
-        System.err.println("[ThreadingHighlighterAgent] installed");
-        InstructionWriter writer = new InstructionWriter();
-        MarkerAdvice.setWriter(writer);
-
-        System.err.println("[ThreadingHighlighterAgent] trace directory: " + writer.getInstructionsDir());
-        System.err.println("[ThreadingHighlighterAgent] trace files will be named: <markerFqn>.jsonl");
-
+        MarkerAdvice.setWriter(new TraceWriter());
         AgentBuilder agent = configureAgent();
         List<MarkerInfo> markers = getAllMarkers();
-
-        System.err.println("[ThreadingHighlighterAgent] Found " + markers.size() + " markers to instrument");
 
         for (MarkerInfo marker : markers) {
             instrumentMarker(agent, marker, inst);
         }
-
-        System.err.println("[ThreadingHighlighterAgent] Instrumented " + markers.size() + " markers");
     }
 
     private static List<MarkerInfo> getAllMarkers() {
@@ -44,7 +34,6 @@ public final class ThreadingHighlighterAgent {
                     field.setAccessible(true);
                     MarkerInfo marker = (MarkerInfo) field.get(null);
                     markers.add(marker);
-                    System.err.println("[ThreadingHighlighterAgent] Discovered marker: " + marker.markerFqn());
                 }
             }
         } catch (Exception e) {
@@ -62,10 +51,17 @@ public final class ThreadingHighlighterAgent {
                 .transform((builder, typeDescription, classLoader, module, protectionDomain) ->
                         builder.visit(Advice.to(MarkerAdvice.class).on(ElementMatchers.named(marker.methodName))))
                 .installOn(inst);
-        System.err.println("[ThreadingHighlighterAgent] Instrumented: " + marker.markerFqn());
     }
 
     private static AgentBuilder configureAgent() {
-        return new AgentBuilder.Default().with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION).with(AgentBuilder.Listener.StreamWriting.toSystemError().withErrorsOnly()).ignore(ElementMatchers.nameStartsWith("net.bytebuddy.").or(ElementMatchers.nameStartsWith("java.")).or(ElementMatchers.nameStartsWith("javax.")).or(ElementMatchers.nameStartsWith("sun.")).or(ElementMatchers.nameStartsWith("com.sun.")).or(ElementMatchers.nameStartsWith("jdk.")).or(ElementMatchers.isSynthetic()));
+        return new AgentBuilder.Default().with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION)
+                .with(AgentBuilder.Listener.StreamWriting.toSystemError().withErrorsOnly())
+                .ignore(ElementMatchers.nameStartsWith("net.bytebuddy.")
+                        .or(ElementMatchers.nameStartsWith("java."))
+                        .or(ElementMatchers.nameStartsWith("javax."))
+                        .or(ElementMatchers.nameStartsWith("sun."))
+                        .or(ElementMatchers.nameStartsWith("com.sun."))
+                        .or(ElementMatchers.nameStartsWith("jdk."))
+                        .or(ElementMatchers.isSynthetic()));
     }
 }

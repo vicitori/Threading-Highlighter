@@ -1,11 +1,14 @@
 plugins {
-    id("java")
-    id("org.jetbrains.kotlin.jvm")
+    kotlin("jvm")
     id("org.jetbrains.intellij.platform")
 }
 
 group = "io.github.vicitori.threading.highlighter.examples"
 version = "0.0.1"
+
+kotlin {
+    jvmToolchain(21)
+}
 
 repositories {
     mavenCentral()
@@ -24,14 +27,10 @@ dependencies {
 intellijPlatform {
     pluginConfiguration {
         ideaVersion {
-            sinceBuild.set("253")
-            untilBuild.set("253.*")
+            sinceBuild = "253"
+            untilBuild = "253.*"
         }
     }
-}
-
-kotlin {
-    jvmToolchain(21)
 }
 
 tasks {
@@ -40,10 +39,16 @@ tasks {
     }
 
     runIde {
+        dependsOn(":agent:shadowJar", ":plugin:buildPlugin")
+
+        // Run IDE with agent to capture markers
         jvmArgs(
-            "-javaagent:${project.rootProject.projectDir}/agent/build/libs/agent.jar",
-            "-Dthreading.highlighter.instructions.dir=${project.rootProject.projectDir}/examples",
-            "-Dthreading.highlighter.user.package=io.github.vicitori.threading.highlighter.examples"
+            "-javaagent:${project.rootProject.projectDir}/agent/build/libs/agent.jar"
+        )
+
+        // Required: Set the traces directory where agent will write trace files
+        systemProperty(
+            "threading.highlighter.traces.dir", "${project.projectDir}/.ij-threading-highlighter"
         )
     }
 }

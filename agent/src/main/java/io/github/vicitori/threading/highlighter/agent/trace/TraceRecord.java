@@ -1,13 +1,13 @@
-package io.github.vicitori.threading.highlighter.agent.instruction;
+package io.github.vicitori.threading.highlighter.agent.trace;
 
-public final class InstructionRecord {
+public final class TraceRecord {
     private final String className;
     private final String methodName;
     private final String fileName;
     private final int lineNumber;
     private long lastSeenTimestampMillis;
 
-    public InstructionRecord(String className, String methodName, String fileName, int lineNumber, long timestampMillis) {
+    public TraceRecord(String className, String methodName, String fileName, int lineNumber, long timestampMillis) {
         this.className = className;
         this.methodName = methodName;
         this.fileName = fileName;
@@ -45,8 +45,8 @@ public final class InstructionRecord {
         return sb.toString();
     }
 
-    public static InstructionRecord fromStackTraceElement(StackTraceElement element, long timestampMillis) {
-        return new InstructionRecord(element.getClassName(), element.getMethodName(), element.getFileName(), element.getLineNumber(), timestampMillis);
+    public static TraceRecord fromStackTraceElement(StackTraceElement element, long timestampMillis) {
+        return new TraceRecord(element.getClassName(), element.getMethodName(), element.getFileName(), element.getLineNumber(), timestampMillis);
     }
 
     private static String escape(String s) {
