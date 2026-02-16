@@ -1,5 +1,6 @@
 plugins {
     kotlin("jvm")
+    kotlin("plugin.serialization") version "2.2.21"
     id("org.jetbrains.intellij.platform")
 }
 
@@ -29,5 +30,11 @@ intellijPlatform {
             sinceBuild = "251"
             untilBuild = "253.*"
         }
+    }
+}
+
+tasks {
+    named("buildPlugin") {
+        dependsOn(":agent:shadowJar")
     }
 }
