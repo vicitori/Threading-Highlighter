@@ -30,8 +30,8 @@ class ShowTraceSummaryAction : AnAction() {
 
         val lines = summary.lines()
         val maxLineLength = lines.maxOfOrNull { it.length } ?: 70
-        textArea.rows = minOf(lines.size, 25)
-        textArea.columns = minOf(maxLineLength + 2, 120)
+        textArea.rows = minOf(lines.size + 2, 35)
+        textArea.columns = minOf(maxLineLength + 10, 180)
 
         val scrollPane = JScrollPane(textArea)
 
