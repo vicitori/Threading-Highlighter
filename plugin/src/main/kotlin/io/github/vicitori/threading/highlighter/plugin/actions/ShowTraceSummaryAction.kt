@@ -2,13 +2,12 @@ package io.github.vicitori.threading.highlighter.plugin.actions
 
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.ui.Messages
 import io.github.vicitori.threading.highlighter.plugin.services.TraceManager
+import java.awt.Font
+import javax.swing.JOptionPane
+import javax.swing.JScrollPane
+import javax.swing.JTextArea
 
-/**
- * Diagnostic action: shows a summary of all files/lines
- * that the plugin currently sees from .ij-threading-highlighter directories.
- */
 class ShowTraceSummaryAction : AnAction() {
 
     override fun update(e: AnActionEvent) {
@@ -22,8 +21,25 @@ class ShowTraceSummaryAction : AnAction() {
 
         val summary = traceManager.buildDebugSummary()
 
-        Messages.showInfoMessage(
-            project, summary, "Threading Trace Summary"
+        val textArea = JTextArea(summary)
+        textArea.font = Font("JetBrains Mono", Font.PLAIN, 14)
+        textArea.isEditable = false
+        textArea.background = null
+        textArea.lineWrap = false
+        textArea.wrapStyleWord = false
+
+        val lines = summary.lines()
+        val maxLineLength = lines.maxOfOrNull { it.length } ?: 70
+        textArea.rows = minOf(lines.size, 25)
+        textArea.columns = minOf(maxLineLength + 2, 120)
+
+        val scrollPane = JScrollPane(textArea)
+
+        JOptionPane.showMessageDialog(
+            null,
+            scrollPane,
+            "Threading Trace Summary",
+            JOptionPane.INFORMATION_MESSAGE
         )
     }
 }
