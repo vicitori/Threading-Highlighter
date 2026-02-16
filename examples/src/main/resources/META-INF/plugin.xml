@@ -37,6 +37,13 @@
                     description="Demonstrates assertIsNonDispatchThread() marker">
                 <keyboard-shortcut keymap="$default" first-keystroke="shift N"/>
             </action>
+
+            <action id="io.github.vicitori.threading.highlighter.examples.ChainedMarkersAction"
+                    class="io.github.vicitori.threading.highlighter.examples.ChainedMarkersAction"
+                    text="Chained Markers Example"
+                    description="Demonstrates chain of calls with multiple threading markers">
+                <keyboard-shortcut keymap="$default" first-keystroke="shift Y"/>
+            </action>
         </group>
     </actions>
 </idea-plugin>

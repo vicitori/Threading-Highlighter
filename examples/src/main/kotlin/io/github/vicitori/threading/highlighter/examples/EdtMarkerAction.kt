@@ -7,7 +7,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 
-class EdtMarkerAction : AnAction() {
+class EdtMarkerAction : AnAction("EDT Marker Only") {
 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return

@@ -19,6 +19,7 @@ repositories {
 }
 
 dependencies {
+    implementation(project(":common"))
     intellijPlatform {
         intellijIdeaUltimate("2025.3.1")
     }
@@ -46,9 +47,9 @@ tasks {
             "-javaagent:${project.rootProject.projectDir}/agent/build/libs/agent.jar"
         )
 
-        // Required: Set the traces directory where agent will write trace files
+        // Set the project base directory for agent to construct traces path
         systemProperty(
-            "threading.highlighter.traces.dir", "${project.projectDir}/.ij-threading-highlighter"
+            "threading.highlighter.project.dir", "${project.projectDir}"
         )
     }
 }
