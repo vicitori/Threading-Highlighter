@@ -7,9 +7,6 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import io.github.vicitori.threading.highlighter.plugin.services.TraceManager
 
-/**
- * Action to reload trace files and refresh gutter icons.
- */
 class ReloadTraceAction : AnAction() {
 
     override fun update(e: AnActionEvent) {
