@@ -7,7 +7,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.Project
 import com.intellij.util.SlowOperations
 
-class SlowOperationOnEdtAction : AnAction() {
+class SlowOperationOnEdtAction : AnAction("Slow Operation Marker Only") {
 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
