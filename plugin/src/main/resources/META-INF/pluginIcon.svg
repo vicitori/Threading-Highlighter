@@ -1,0 +1,84 @@
+<!--<svg viewBox="0 0 64 72" xmlns="http://www.w3.org/2000/svg">-->
+
+<!--	<defs>-->
+<!--		<linearGradient id="g" x1="0" y1="0" x2="0" y2="1">-->
+<!--			<stop offset="0%" stop-color="#ff1f3d"/>-->
+<!--			<stop offset="100%" stop-color="#ff9a00"/>-->
+<!--		</linearGradient>-->
+<!--	</defs>-->
+
+<!--	<path d="-->
+<!--    M32 4-->
+<!--    C44 4 46 16 42 26-->
+<!--    L38 40-->
+<!--    C36 46 28 46 26 40-->
+<!--    L22 26-->
+<!--    C18 16 20 4 32 4-->
+<!--    Z"-->
+<!--		  fill="url(#g)"-->
+<!--	/>-->
+
+<!--	<path d="-->
+<!--    M32 50-->
+<!--    Q35 57 41 60-->
+<!--    Q35 63 32 70-->
+<!--    Q29 63 23 60-->
+<!--    Q29 57 32 50-->
+<!--    Z"-->
+<!--		  fill="#ff9a00"-->
+<!--	/>-->
+
+<!--</svg>-->
+<svg viewBox="0 0 96 72" xmlns="http://www.w3.org/2000/svg">
+
+	<defs>
+		<linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+			<stop offset="0%" stop-color="#ff1f3d"/>
+			<stop offset="100%" stop-color="#ff9a00"/>
+		</linearGradient>
+	</defs>
+
+	<path d="
+    M26 6
+    Q14 24 14 36
+    Q14 48 26 66
+    L26 66"
+		  fill="none"
+		  stroke="url(#g)"
+		  stroke-width="10"
+		  stroke-linecap="butt"
+	/>
+
+	<path d="
+    M70 6
+    Q82 24 82 36
+    Q82 48 70 66
+    L70 66"
+		  fill="none"
+		  stroke="url(#g)"
+		  stroke-width="10"
+		  stroke-linecap="butt"
+	/>
+
+	<path d="
+    M48 4
+    C60 4 62 16 58 26
+    L54 40
+    C52 46 44 46 42 40
+    L38 26
+    C34 16 36 4 48 4
+    Z"
+		  fill="url(#g)"
+	/>
+
+	<path d="
+    M48 48
+    Q51 55 57 58
+    Q51 61 48 68
+    Q45 61 39 58
+    Q45 55 48 48
+    Z"
+		  fill="#ff9a00"
+	/>
+
+</svg>
