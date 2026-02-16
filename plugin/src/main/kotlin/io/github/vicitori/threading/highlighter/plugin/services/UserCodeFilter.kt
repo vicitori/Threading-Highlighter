@@ -36,7 +36,7 @@ object UserCodeFilter {
             }
             val sorted = packages.sorted()
             return sorted
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             return emptyList()
         }
     }
