@@ -34,7 +34,7 @@ class ThreadingMarkerAnnotator : Annotator {
 
     private fun shouldAnnotate(element: PsiElement): Boolean {
         if (element.firstChild != null) return false
-        
+
         val stateService = MarkerStateService.getInstance(element.project)
         return stateService.areMarkersEnabled()
     }
@@ -149,8 +149,8 @@ class ThreadingMarkerAnnotator : Annotator {
 
             val lines = message.lines()
             val maxLineLength = lines.maxOfOrNull { it.length } ?: 60
-            rows = minOf(lines.size, 20)
-            columns = minOf(maxLineLength + 2, 100)
+            rows = minOf(lines.size + 2, 35)
+            columns = minOf(maxLineLength + 10, 180)
         }
     }
 }
