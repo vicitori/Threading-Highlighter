@@ -35,8 +35,6 @@
         <annotator language="JAVA"
                    implementationClass="io.github.vicitori.threading.highlighter.plugin.annotator.ThreadingMarkerAnnotator"/>
 
-        <projectActivity implementation="io.github.vicitori.threading.highlighter.plugin.startup.TraceLoaderStartupActivity"/>
-
         <notificationGroup id="Threading Highlighter" displayType="BALLOON"/>
     </extensions>
 
@@ -44,22 +42,14 @@
         <group id="ThreadingHighlighter.Group" text="Threading Highlighter" popup="true">
             <add-to-group group-id="ToolsMenu" anchor="last"/>
 
-                    <action id="ThreadingHighlighter.ReloadTrace"
-                            class="io.github.vicitori.threading.highlighter.plugin.actions.ReloadTraceAction"
-                            text="Reload Threading Traces"
-                            description="Reload trace files from .ij-threading-highlighter directory and refresh gutter icons"/>
-                    <action id="ThreadingHighlighter.ToggleMarkers"
-                            class="io.github.vicitori.threading.highlighter.plugin.actions.ToggleMarkersAction"
-                            text="Toggle Markers"
-                            description="Show or hide threading marker gutter icons"/>
-                    <action id="ThreadingHighlighter.ClearMarkers"
-                            class="io.github.vicitori.threading.highlighter.plugin.actions.ClearMarkersAction"
-                            text="Clear All Markers"
-                            description="Clear all trace data and remove gutter icons"/>
-                    <action id="ThreadingHighlighter.ShowTraceSummary"
-                            class="io.github.vicitori.threading.highlighter.plugin.actions.ShowTraceSummaryAction"
-                            text="Show Trace Summary"
-                            description="Display diagnostic summary of loaded traces (for debugging)"/>
+            <action id="ThreadingHighlighter.ReloadTrace"
+                    class="io.github.vicitori.threading.highlighter.plugin.actions.ReloadTraceAction"
+                    text="Reload Threading Traces"
+                    description="Reload trace files from .ij-threading-highlighter directory and refresh gutter icons"/>
+            <action id="ThreadingHighlighter.ShowTraceSummary"
+                    class="io.github.vicitori.threading.highlighter.plugin.actions.ShowTraceSummaryAction"
+                    text="Show Trace Summary"
+                    description="Display diagnostic summary of loaded traces (for debugging)"/>
         </group>
     </actions>
 </idea-plugin>
