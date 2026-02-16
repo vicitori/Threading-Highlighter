@@ -17,13 +17,4 @@ class MarkerStateService {
     fun enableMarkers() {
         markersEnabled = true
     }
-
-    fun disableMarkers() {
-        markersEnabled = false
-    }
-
-    fun toggleMarkers(): Boolean {
-        markersEnabled = !markersEnabled
-        return markersEnabled
-    }
 }
