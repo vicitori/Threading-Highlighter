@@ -2,8 +2,8 @@ package io.github.vicitori.threading.highlighter.agent;
 
 import io.github.vicitori.threading.highlighter.agent.marker.MarkerAdvice;
 import io.github.vicitori.threading.highlighter.agent.trace.TraceWriter;
-import io.github.vicitori.threading.highlighter.common.marker.MarkerInfo;
-import io.github.vicitori.threading.highlighter.common.marker.Markers;
+import io.github.vicitori.threading.highlighter.agent.common.MarkerInfo;
+import io.github.vicitori.threading.highlighter.agent.common.Markers;
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.asm.Advice;
 import net.bytebuddy.matcher.ElementMatchers;
@@ -24,9 +24,9 @@ public final class ThreadingHighlighterAgent {
     }
 
     private static void instrumentMarker(AgentBuilder agent, MarkerInfo marker, Instrumentation inst) {
-        agent.type(ElementMatchers.named(marker.classFqn))
+        agent.type(ElementMatchers.named(marker.classFqn()))
                 .transform((builder, typeDescription, classLoader, module, protectionDomain) ->
-                        builder.visit(Advice.to(MarkerAdvice.class).on(ElementMatchers.named(marker.methodName))))
+                        builder.visit(Advice.to(MarkerAdvice.class).on(ElementMatchers.named(marker.methodName()))))
                 .installOn(inst);
     }
 
@@ -34,6 +34,7 @@ public final class ThreadingHighlighterAgent {
         return new AgentBuilder.Default().with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION)
                 .with(AgentBuilder.Listener.StreamWriting.toSystemError().withErrorsOnly())
                 .ignore(ElementMatchers.nameStartsWith("net.bytebuddy.")
+                        .or(ElementMatchers.nameStartsWith("io.github.vicitori.shaded."))
                         .or(ElementMatchers.nameStartsWith("java."))
                         .or(ElementMatchers.nameStartsWith("javax."))
                         .or(ElementMatchers.nameStartsWith("sun."))

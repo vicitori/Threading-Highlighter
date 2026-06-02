@@ -1,6 +1,6 @@
 package io.github.vicitori.threading.highlighter.agent.trace;
 
-import io.github.vicitori.threading.highlighter.common.trace.TraceRecord;
+import io.github.vicitori.threading.highlighter.agent.common.TraceRecord;
 
 public final class TraceRecordBuilder {
 
@@ -17,17 +17,17 @@ public final class TraceRecordBuilder {
     public static String toJsonLine(TraceRecord record) {
         StringBuilder sb = new StringBuilder(512);
         sb.append('{');
-        sb.append("\"className\":\"").append(escape(record.getClassName())).append("\",");
-        sb.append("\"methodName\":\"").append(escape(record.getMethodName())).append("\",");
+        sb.append("\"className\":\"").append(escape(record.className())).append("\",");
+        sb.append("\"methodName\":\"").append(escape(record.methodName())).append("\",");
 
-        if (record.getFileName() == null) {
+        if (record.fileName() == null) {
             sb.append("\"fileName\":null,");
         } else {
-            sb.append("\"fileName\":\"").append(escape(record.getFileName())).append("\",");
+            sb.append("\"fileName\":\"").append(escape(record.fileName())).append("\",");
         }
 
-        sb.append("\"lineNumber\":").append(record.getLineNumber()).append(",");
-        sb.append("\"lastSeenTimestampEpochMillis\":").append(record.getLastSeenTimestampEpochMillis());
+        sb.append("\"lineNumber\":").append(record.lineNumber()).append(",");
+        sb.append("\"lastSeenTimestampEpochMillis\":").append(record.lastSeenTimestampEpochMillis());
         sb.append('}');
         return sb.toString();
     }
