@@ -39,6 +39,12 @@ ThreadingHighlighter/
 - свойство `threading.highlighter.project.dir` — путь, относительно которого агент создаст директорию .ij-threading-highlighter/ для хранения trace-файлов.
 Также требуется задать системное свойство `threading.highlighter.project.dir` — путь, относительно которого агент создаст директорию `.ij-threading-highlighter/` для хранения файлов трассировки.
 
+Необязательные свойства:
+- `threading.highlighter.max.stack.depth` — максимальная глубина захвата стека (по умолчанию 128 фреймов);
+- `threading.highlighter.flush.interval.minutes` — интервал периодического сброса трасс на диск (по умолчанию 15 минут).
+
+JDK/framework-фреймы (`java.*`, `javax.*`, `com.intellij.*` и т.п.) отфильтровываются агентом на стороне записи.
+
 
 Пример конфигурации в build.gradle.kts:
 ```

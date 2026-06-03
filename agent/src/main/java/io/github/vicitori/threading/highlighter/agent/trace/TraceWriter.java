@@ -1,7 +1,7 @@
 package io.github.vicitori.threading.highlighter.agent.trace;
 
-import io.github.vicitori.threading.highlighter.common.config.ThreadingHighlighterConfig;
-import io.github.vicitori.threading.highlighter.common.trace.TraceRecord;
+import io.github.vicitori.threading.highlighter.agent.common.AgentConfig;
+import io.github.vicitori.threading.highlighter.agent.common.TraceRecord;
 
 import java.io.BufferedWriter;
 import java.nio.charset.StandardCharsets;
@@ -10,6 +10,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -22,11 +23,12 @@ public final class TraceWriter {
     private final Path tracesDir;
     private final Object lock = new Object();
     private final Map<String, Map<String, TraceRecord>> tracesByMarker = new HashMap<>();
+    private final StackCapture stackCapture = new StackCapture();
     private final ScheduledExecutorService scheduler;
     private volatile boolean isShuttingDown = false;
 
     public TraceWriter() {
-        this.tracesDir = ThreadingHighlighterConfig.getTracesPathFromSystemProperty();
+        this.tracesDir = AgentConfig.getTracesPathFromSystemProperty();
 
         long flushIntervalMinutes = getFlushInterval();
         this.scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
@@ -59,23 +61,23 @@ public final class TraceWriter {
         }, "ThreadingHighlighter-Shutdown"));
     }
 
-    public void record(String markerFqn, Throwable stackTraceHolder) {
+    public void record(String markerFqn) {
         long timestamp = System.currentTimeMillis();
-        StackTraceElement[] stackTrace = stackTraceHolder.getStackTrace();
+        List<StackTraceElement> frames = stackCapture.capture();
 
         synchronized (lock) {
             Map<String, TraceRecord> traces = tracesByMarker.computeIfAbsent(markerFqn, k -> new LinkedHashMap<>());
-            for (StackTraceElement element : stackTrace) {
+            for (StackTraceElement element : frames) {
                 TraceRecord record = TraceRecordBuilder.fromStackTraceElement(element, timestamp);
                 String key = record.getKey();
 
                 TraceRecord existing = traces.get(key);
                 if (existing != null) {
                     traces.put(key, new TraceRecord(
-                            existing.getClassName(),
-                            existing.getMethodName(),
-                            existing.getFileName(),
-                            existing.getLineNumber(),
+                            existing.className(),
+                            existing.methodName(),
+                            existing.fileName(),
+                            existing.lineNumber(),
                             timestamp
                     ));
                 } else {
@@ -125,7 +127,7 @@ public final class TraceWriter {
 
     private void appendTracesToFile(String markerFqn, Map<String, TraceRecord> traces) {
         try {
-            String safeFileName = ThreadingHighlighterConfig.getTraceFileName(markerFqn);
+            String safeFileName = AgentConfig.getTraceFileName(markerFqn);
             Path markerFilePath = tracesDir.resolve(safeFileName);
             Files.createDirectories(tracesDir);
 

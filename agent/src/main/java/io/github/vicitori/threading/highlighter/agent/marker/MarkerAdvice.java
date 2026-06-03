@@ -26,9 +26,11 @@ public final class MarkerAdvice {
 
         IN_RECORD.set(true);
         try {
-            Throwable stackTraceHolder = new Throwable();
             String markerFqn = method.getDeclaringClass().getName() + "#" + method.getName();
-            w.record(markerFqn, stackTraceHolder);
+            w.record(markerFqn);
+        } catch (Throwable t) {
+            // Never propagate agent failures into the instrumented host method
+            System.err.println("[ThreadingHighlighter] Failed to record trace: " + t);
         } finally {
             IN_RECORD.set(false);
         }
