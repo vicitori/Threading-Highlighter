@@ -2,6 +2,12 @@ package io.github.vicitori.threading.highlighter.agent.trace;
 
 import io.github.vicitori.threading.highlighter.agent.common.TraceRecord;
 
+/**
+ * Builds {@link TraceRecord}s from stack frames and writes them as JSON lines by hand.
+ *
+ * <p>The agent writes JSON without a library on purpose, so it stays free of extra
+ * dependencies. The field names here must match what the plugin reads.
+ */
 public final class TraceRecordBuilder {
 
     public static TraceRecord fromStackTraceElement(StackTraceElement element, long timestampMillis) {

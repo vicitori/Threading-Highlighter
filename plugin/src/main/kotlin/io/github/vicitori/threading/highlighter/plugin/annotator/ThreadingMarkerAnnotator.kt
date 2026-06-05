@@ -17,6 +17,12 @@ import javax.swing.JOptionPane
 import javax.swing.JScrollPane
 import javax.swing.JTextArea
 
+/**
+ * Draws a gutter icon on lines that the agent recorded as threading markers.
+ *
+ * Annotators run once per PSI element, so two guards keep exactly one icon per line:
+ * only leaf elements are handled, and only the first element on the line draws.
+ */
 class ThreadingMarkerAnnotator : Annotator {
     override fun annotate(element: PsiElement, holder: AnnotationHolder) {
         if (!shouldAnnotate(element)) return
@@ -33,6 +39,7 @@ class ThreadingMarkerAnnotator : Annotator {
     }
 
     private fun shouldAnnotate(element: PsiElement): Boolean {
+        // leaf elements only (no children), so each line is handled once
         if (element.firstChild != null) return false
 
         val stateService = MarkerStateService.getInstance(element.project)

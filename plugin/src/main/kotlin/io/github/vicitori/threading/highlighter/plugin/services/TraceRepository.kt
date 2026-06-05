@@ -8,6 +8,12 @@ import java.nio.file.Path
 import kotlin.io.path.exists
 import kotlin.io.path.readLines
 
+/**
+ * Reads a marker's JSONL trace file into [TraceRecord]s.
+ *
+ * Keeps only user-code frames and, for each location, the record with the newest
+ * timestamp. Unknown JSON fields are ignored so older files still load.
+ */
 class TraceRepository {
     private val json = Json { ignoreUnknownKeys = true }
     fun readTraceFile(path: Path, userPackages: List<String>): List<TraceRecord> {

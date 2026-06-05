@@ -10,11 +10,20 @@ import io.github.vicitori.threading.highlighter.common.trace.TraceRecord
 import io.github.vicitori.threading.highlighter.plugin.models.MarkerTraceData
 import kotlin.io.path.exists
 
+/**
+ * Loads trace files for the project and answers "what markers are on this line?".
+ *
+ * Traces are stored twice: [traceDataByMarker] groups them by marker, and
+ * [locationIndex] is a reverse index (file -> line -> records) that the annotator
+ * reads on every line. [locationIndex] is always rebuilt from [traceDataByMarker].
+ */
 @Service(Service.Level.PROJECT)
 class TraceManager(private val project: Project) {
     private val repository = TraceRepository()
     private val stateService = MarkerStateService.getInstance(project)
     private val traceDataByMarker = mutableMapOf<String, MarkerTraceData>()
+
+    // reverse index for fast per-line lookups by the annotator
     private val locationIndex = mutableMapOf<String, MutableMap<Int, MutableList<Pair<MarkerInfo, TraceRecord>>>>()
 
     companion object {

@@ -4,6 +4,12 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.vfs.VirtualFile
 
+/**
+ * Decides which stack frames belong to the user's own code.
+ *
+ * User packages are guessed from the project source roots. If none are found,
+ * [isUserCode] returns true for every frame (show all, hide nothing).
+ */
 object UserCodeFilter {
     fun getUserPackages(project: Project): List<String> {
         val detectedPackages = detectUserPackages(project)
@@ -50,12 +56,14 @@ object UserCodeFilter {
     private fun collectPackageParts(dir: VirtualFile, parts: MutableList<String>) {
         parts.add(dir.name)
         val subdirs = dir.children.filter { it.isDirectory }
+        // follow single-child folders down to the real base package (e.g. io/github/app)
         if (subdirs.size == 1) {
             collectPackageParts(subdirs[0], parts)
         }
     }
 
     fun isUserCode(className: String, userPackages: List<String>): Boolean {
+        // no packages detected: do not hide anything
         if (userPackages.isEmpty()) {
             return true
         }

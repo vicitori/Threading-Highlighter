@@ -11,6 +11,10 @@ import net.bytebuddy.matcher.ElementMatchers;
 import java.lang.instrument.Instrumentation;
 import java.util.List;
 
+/**
+ * Agent entry point. On {@code premain} it installs Byte Buddy advice on the known
+ * threading assertion methods (see {@link Markers}).
+ */
 public final class ThreadingHighlighterAgent {
 
     public static void premain(String agentArgs, Instrumentation inst) {
@@ -33,6 +37,7 @@ public final class ThreadingHighlighterAgent {
     private static AgentBuilder configureAgent() {
         return new AgentBuilder.Default().with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION)
                 .with(AgentBuilder.Listener.StreamWriting.toSystemError().withErrorsOnly())
+                // skip the JDK and the agent's own classes, or the advice could recurse
                 .ignore(ElementMatchers.nameStartsWith("net.bytebuddy.")
                         .or(ElementMatchers.nameStartsWith("io.github.vicitori.shaded."))
                         .or(ElementMatchers.nameStartsWith("java."))

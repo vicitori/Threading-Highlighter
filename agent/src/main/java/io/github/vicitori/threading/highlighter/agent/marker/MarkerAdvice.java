@@ -5,6 +5,13 @@ import net.bytebuddy.asm.Advice;
 
 import java.lang.reflect.Method;
 
+/**
+ * Byte Buddy advice that runs at the start of each instrumented assertion method.
+ *
+ * <p>This code is copied into host methods, so it must stay small and safe. The
+ * {@link #IN_RECORD} flag stops endless recursion: recording a trace can itself
+ * call an instrumented assertion, which would trigger this advice again.
+ */
 public final class MarkerAdvice {
     public static volatile TraceWriter writer;
     public static final ThreadLocal<Boolean> IN_RECORD = ThreadLocal.withInitial(() -> false);

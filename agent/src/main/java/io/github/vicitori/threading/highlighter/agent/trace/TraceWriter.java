@@ -16,6 +16,14 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Collects trace records in memory and writes them to JSONL files.
+ *
+ * <p>Records are grouped by marker. The same code location (key
+ * {@code class#method@line}) is kept only once, with its latest timestamp. A daemon
+ * thread writes the buffer to disk on a timer, and a shutdown hook writes the rest
+ * when the JVM stops. All access to the buffer goes through one lock.
+ */
 public final class TraceWriter {
     private static final String FLUSH_INTERVAL_PROPERTY = "threading.highlighter.flush.interval.minutes";
     private static final long DEFAULT_FLUSH_INTERVAL_MINUTES = 15;
@@ -73,6 +81,7 @@ public final class TraceWriter {
 
                 TraceRecord existing = traces.get(key);
                 if (existing != null) {
+                    // same location seen again: keep one record, only update the timestamp
                     traces.put(key, new TraceRecord(
                             existing.className(),
                             existing.methodName(),
