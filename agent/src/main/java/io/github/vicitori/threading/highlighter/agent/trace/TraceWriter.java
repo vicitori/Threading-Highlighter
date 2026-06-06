@@ -102,20 +102,49 @@ public final class TraceWriter {
             if (tracesByMarker.isEmpty()) {
                 return;
             }
+            // drain: detach the buffer under the lock so new record() calls
+            // write into fresh inner maps while we do slow I/O outside the lock
             snapshot = new HashMap<>(tracesByMarker);
             tracesByMarker.clear();
         }
 
-        int totalRecords = 0;
+        int flushedRecords = 0;
+        Map<String, Map<String, TraceRecord>> failed = null;
         for (Map.Entry<String, Map<String, TraceRecord>> entry : snapshot.entrySet()) {
             String markerFqn = entry.getKey();
             Map<String, TraceRecord> traces = entry.getValue();
-            appendTracesToFile(markerFqn, traces);
-            totalRecords += traces.size();
+            if (appendTracesToFile(markerFqn, traces)) {
+                flushedRecords += traces.size();
+            } else {
+                // restore: keep failed data for the next flush instead of losing it
+                if (failed == null) {
+                    failed = new HashMap<>();
+                }
+                failed.put(markerFqn, traces);
+            }
         }
 
-        if (!isShuttingDown && totalRecords > 0) {
-            System.out.println("[ThreadingHighlighter] Flushed " + totalRecords + " trace records for " + snapshot.size() + " markers");
+        if (failed != null) {
+            restoreFailed(failed);
+        }
+
+        if (!isShuttingDown && flushedRecords > 0) {
+            System.out.println("[ThreadingHighlighter] Flushed " + flushedRecords + " trace records for " + snapshot.size() + " markers");
+        }
+    }
+
+    // Returns failed writes to the buffer for a later retry, merging per key (newest timestamp wins).
+    private void restoreFailed(Map<String, Map<String, TraceRecord>> failed) {
+        synchronized (lock) {
+            for (Map.Entry<String, Map<String, TraceRecord>> entry : failed.entrySet()) {
+                tracesByMarker.merge(entry.getKey(), entry.getValue(), (live, restored) -> {
+                    restored.forEach((key, restoredRecord) -> live.merge(key, restoredRecord,
+                            (liveRecord, oldRecord) ->
+                                    liveRecord.lastSeenTimestampEpochMillis() >= oldRecord.lastSeenTimestampEpochMillis()
+                                            ? liveRecord : oldRecord));
+                    return live;
+                });
+            }
         }
     }
 
@@ -134,7 +163,8 @@ public final class TraceWriter {
         return DEFAULT_FLUSH_INTERVAL_MINUTES;
     }
 
-    private void appendTracesToFile(String markerFqn, Map<String, TraceRecord> traces) {
+    // Returns false if the write fails, so the caller can keep the data for a retry.
+    private boolean appendTracesToFile(String markerFqn, Map<String, TraceRecord> traces) {
         try {
             String safeFileName = AgentConfig.getTraceFileName(markerFqn);
             Path markerFilePath = tracesDir.resolve(safeFileName);
@@ -147,9 +177,11 @@ public final class TraceWriter {
                     out.newLine();
                 }
             }
+            return true;
         } catch (Throwable e) {
-            System.err.println("[TraceWriter] ERROR writing marker " + markerFqn + " to file:");
+            System.err.println("[TraceWriter] ERROR writing marker " + markerFqn + " to file (data retained for retry):");
             e.printStackTrace(System.err);
+            return false;
         }
     }
 }
