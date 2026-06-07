@@ -58,8 +58,19 @@ public final class TraceRecordBuilder {
                 case '\t':
                     sb.append("\\t");
                     break;
+                case '\b':
+                    sb.append("\\b");
+                    break;
+                case '\f':
+                    sb.append("\\f");
+                    break;
                 default:
-                    sb.append(ch);
+                    // RFC 8259: control characters U+0000-U+001F need a unicode escape
+                    if (ch < 0x20) {
+                        sb.append(String.format("\\u%04x", (int) ch));
+                    } else {
+                        sb.append(ch);
+                    }
             }
         }
         return sb.toString();
