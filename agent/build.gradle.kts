@@ -36,7 +36,9 @@ tasks {
         manifest {
             attributes(
                 mapOf(
+                    // Premain-Class: -javaagent at JVM startup; Agent-Class: attach to a running JVM
                     "Premain-Class" to "io.github.vicitori.threading.highlighter.agent.ThreadingHighlighterAgent",
+                    "Agent-Class" to "io.github.vicitori.threading.highlighter.agent.ThreadingHighlighterAgent",
                     "Can-Redefine-Classes" to "true",
                     "Can-Retransform-Classes" to "true"
                 )
