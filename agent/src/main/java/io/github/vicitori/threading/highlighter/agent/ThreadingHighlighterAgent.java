@@ -12,12 +12,25 @@ import java.lang.instrument.Instrumentation;
 import java.util.List;
 
 /**
- * Agent entry point. On {@code premain} it installs Byte Buddy advice on the known
- * threading assertion methods (see {@link Markers}).
+ * Agent entry point. It installs Byte Buddy advice on the known threading assertion
+ * methods (see {@link Markers}).
+ *
+ * <p>Both entry points share the same installation: {@code premain} runs when the
+ * agent is passed via {@code -javaagent} at startup, and {@code agentmain} runs when
+ * the agent is attached to an already running JVM through the Attach API. Retransform
+ * is enabled, so markers that are already loaded get instrumented in both cases.
  */
 public final class ThreadingHighlighterAgent {
 
     public static void premain(String agentArgs, Instrumentation inst) {
+        install(inst);
+    }
+
+    public static void agentmain(String agentArgs, Instrumentation inst) {
+        install(inst);
+    }
+
+    private static void install(Instrumentation inst) {
         MarkerAdvice.setWriter(new TraceWriter());
         AgentBuilder agent = configureAgent();
         List<MarkerInfo> markers = Markers.getAll();
