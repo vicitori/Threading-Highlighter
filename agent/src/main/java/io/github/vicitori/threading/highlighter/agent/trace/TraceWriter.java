@@ -1,6 +1,7 @@
 package io.github.vicitori.threading.highlighter.agent.trace;
 
 import io.github.vicitori.threading.highlighter.agent.common.AgentConfig;
+import io.github.vicitori.threading.highlighter.agent.common.AgentLog;
 import io.github.vicitori.threading.highlighter.agent.common.TraceRecord;
 
 import java.io.BufferedWriter;
@@ -52,7 +53,7 @@ public final class TraceWriter {
                 TimeUnit.MINUTES
         );
 
-        System.out.println("[ThreadingHighlighter] Periodic flush enabled: every " + flushIntervalMinutes + " minutes");
+        AgentLog.info("Periodic flush enabled: every " + flushIntervalMinutes + " minutes");
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             isShuttingDown = true;
@@ -129,7 +130,7 @@ public final class TraceWriter {
         }
 
         if (!isShuttingDown && flushedRecords > 0) {
-            System.out.println("[ThreadingHighlighter] Flushed " + flushedRecords + " trace records for " + snapshot.size() + " markers");
+            AgentLog.debug("Flushed " + flushedRecords + " trace records for " + snapshot.size() + " markers");
         }
     }
 
@@ -158,7 +159,7 @@ public final class TraceWriter {
                 }
             }
         } catch (NumberFormatException e) {
-            System.err.println("[ThreadingHighlighter] Invalid flush interval property: " + System.getProperty(FLUSH_INTERVAL_PROPERTY));
+            AgentLog.warn("Invalid flush interval property: " + System.getProperty(FLUSH_INTERVAL_PROPERTY));
         }
         return DEFAULT_FLUSH_INTERVAL_MINUTES;
     }
@@ -179,8 +180,7 @@ public final class TraceWriter {
             }
             return true;
         } catch (Throwable e) {
-            System.err.println("[TraceWriter] ERROR writing marker " + markerFqn + " to file (data retained for retry):");
-            e.printStackTrace(System.err);
+            AgentLog.error("Error writing marker " + markerFqn + " to file (data retained for retry)", e);
             return false;
         }
     }

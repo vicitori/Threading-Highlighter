@@ -1,5 +1,7 @@
 package io.github.vicitori.threading.highlighter.agent.trace;
 
+import io.github.vicitori.threading.highlighter.agent.common.AgentLog;
+
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -73,10 +75,10 @@ final class StackCapture {
             if (value >= MIN_ALLOWED_DEPTH) {
                 return value;
             }
-            // premain must not crash the host JVM: print a warning and use the default
-            System.err.println("[ThreadingHighlighter] Ignoring non-positive " + MAX_DEPTH_PROPERTY + ": " + value);
+            // premain must not crash the host JVM: log a warning and use the default
+            AgentLog.warn("Ignoring non-positive " + MAX_DEPTH_PROPERTY + ": " + value);
         } catch (NumberFormatException e) {
-            System.err.println("[ThreadingHighlighter] Ignoring invalid " + MAX_DEPTH_PROPERTY + ": " + property);
+            AgentLog.warn("Ignoring invalid " + MAX_DEPTH_PROPERTY + ": " + property);
         }
         return DEFAULT_MAX_DEPTH;
     }

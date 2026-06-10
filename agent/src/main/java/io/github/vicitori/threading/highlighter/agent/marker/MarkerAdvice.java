@@ -1,5 +1,6 @@
 package io.github.vicitori.threading.highlighter.agent.marker;
 
+import io.github.vicitori.threading.highlighter.agent.common.AgentLog;
 import io.github.vicitori.threading.highlighter.agent.trace.TraceWriter;
 import net.bytebuddy.asm.Advice;
 
@@ -37,7 +38,7 @@ public final class MarkerAdvice {
             w.record(markerFqn);
         } catch (Throwable t) {
             // Never propagate agent failures into the instrumented host method
-            System.err.println("[ThreadingHighlighter] Failed to record trace: " + t);
+            AgentLog.error("Failed to record trace", t);
         } finally {
             IN_RECORD.set(false);
         }
