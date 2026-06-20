@@ -4,18 +4,22 @@ on:
   pull_request:
     branches: [ main ]
   push:
-
+    branches: [ main ]
+    tags: [ 'v*' ]
 
 # Cancel in-progress runs for the same branch/PR to save resources
 concurrency:
   group: build-${{ github.ref }}
   cancel-in-progress: true
 
+# Least privilege by default
+permissions:
+  contents: read
+
 jobs:
   build:
     name: Build project
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
