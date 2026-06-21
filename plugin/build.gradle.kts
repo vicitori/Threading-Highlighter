@@ -31,6 +31,13 @@ intellijPlatform {
             untilBuild = "253.*"
         }
     }
+
+    // Used by the CI `verify` job to check compatibility against target IDEs
+    pluginVerification {
+        ides {
+            recommended()
+        }
+    }
 }
 
 tasks {
