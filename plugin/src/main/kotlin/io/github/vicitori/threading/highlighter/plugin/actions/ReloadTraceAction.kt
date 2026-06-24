@@ -1,6 +1,5 @@
 package io.github.vicitori.threading.highlighter.plugin.actions
 
-import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
 import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.actionSystem.AnAction
@@ -17,16 +16,13 @@ class ReloadTraceAction : AnAction() {
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
 
-        val traceManager = TraceManager.getInstance(project)
-        traceManager.reloadTraces()
-
-        val daemon = DaemonCodeAnalyzer.getInstance(project)
-        daemon.restart()
-
-        val message = "Threading traces reloaded. Check IDE logs for details (Help → Show Log)."
-
-        NotificationGroupManager.getInstance().getNotificationGroup("Threading Highlighter").createNotification(
-            "Threading traces reloaded", message, NotificationType.INFORMATION
-        ).notify(project)
+        // reload runs in the background and restarts highlighting itself;
+        // notify the user only once the new snapshot is actually published
+        TraceManager.getInstance(project).reloadTraces {
+            val message = "Threading traces reloaded. Check IDE logs for details (Help → Show Log)."
+            NotificationGroupManager.getInstance().getNotificationGroup("Threading Highlighter").createNotification(
+                "Threading traces reloaded", message, NotificationType.INFORMATION
+            ).notify(project)
+        }
     }
 }
