@@ -1,7 +1,11 @@
 package io.github.vicitori.threading.highlighter.plugin.services
 
+import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
+import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
+import com.intellij.openapi.progress.ProgressIndicator
+import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import io.github.vicitori.threading.highlighter.common.config.ThreadingHighlighterConfig
 import io.github.vicitori.threading.highlighter.common.marker.MarkerInfo
@@ -13,64 +17,79 @@ import kotlin.io.path.exists
 /**
  * Loads trace files for the project and answers "what markers are on this line?".
  *
- * Traces are stored twice: [traceDataByMarker] groups them by marker, and
- * [locationIndex] is a reverse index (file -> line -> records) that the annotator
- * reads on every line. [locationIndex] is always rebuilt from [traceDataByMarker].
+ * One writer (the background reload task) publishes an immutable [TraceSnapshot]
+ * with a single volatile write; many readers (the annotator on background threads)
+ * read it lock-free. The service starts empty: data is loaded only on an explicit
+ * reload, off the EDT.
  */
 @Service(Service.Level.PROJECT)
 class TraceManager(private val project: Project) {
     private val repository = TraceRepository()
     private val stateService = MarkerStateService.getInstance(project)
-    private val traceDataByMarker = mutableMapOf<String, MarkerTraceData>()
 
-    // reverse index for fast per-line lookups by the annotator
-    private val locationIndex = mutableMapOf<String, MutableMap<Int, MutableList<Pair<MarkerInfo, TraceRecord>>>>()
+    @Volatile
+    private var snapshot: TraceSnapshot = TraceSnapshot.EMPTY
 
     companion object {
         fun getInstance(project: Project): TraceManager = project.service()
     }
 
-    init {
-        reloadTraces()
+    /**
+     * Loads traces in a background task and publishes them atomically, then restarts
+     * highlighting. Safe to call from the EDT: the disk I/O never runs on it.
+     *
+     * @param onReloaded run on the EDT after the new snapshot is published
+     */
+    fun reloadTraces(onReloaded: () -> Unit = {}) {
+        object : Task.Backgroundable(project, "Loading threading traces", true) {
+            override fun run(indicator: ProgressIndicator) {
+                // single volatile write == happens-before for every later reader
+                snapshot = loadSnapshot()
+                stateService.enableMarkers()
+            }
+
+            override fun onSuccess() {
+                DaemonCodeAnalyzer.getInstance(project).restart()
+                onReloaded()
+            }
+        }.queue()
     }
 
-    fun reloadTraces() {
-        val projectBasePath = project.basePath ?: return
+    fun getRecordsForLocation(fileName: String, lineNumber: Int): List<Pair<MarkerInfo, TraceRecord>> =
+        snapshot.getRecordsForLocation(fileName, lineNumber)
+
+    private fun loadSnapshot(): TraceSnapshot {
+        val projectBasePath = project.basePath ?: return TraceSnapshot.EMPTY
         val tracesDir = ThreadingHighlighterConfig.findTracesPath(projectBasePath)
-
-        traceDataByMarker.clear()
-        clearIndex()
-
         if (!tracesDir.exists()) {
-            return
+            return TraceSnapshot.EMPTY
         }
 
-        val markers = Markers.getAll()
-        val userPackages = UserCodeFilter.getUserPackages(project)
+        // reading the project model off the EDT requires a read lock
+        val userPackages = ReadAction.compute<List<String>, RuntimeException> {
+            UserCodeFilter.getUserPackages(project)
+        }
 
-        for (marker in markers) {
+        val dataByMarker = LinkedHashMap<String, MarkerTraceData>()
+        for (marker in Markers.getAll()) {
             val traceFile = tracesDir.resolve(repository.getTraceFileName(marker))
             if (!traceFile.exists()) {
                 continue
             }
             val traces = repository.readTraceFile(traceFile, userPackages)
             if (traces.isNotEmpty()) {
-                traceDataByMarker[marker.markerFqn()] = MarkerTraceData(marker, traces)
+                dataByMarker[marker.markerFqn()] = MarkerTraceData(marker, traces)
             }
         }
-        rebuildIndex()
-        stateService.enableMarkers()
-    }
-
-    fun getRecordsForLocation(fileName: String, lineNumber: Int): List<Pair<MarkerInfo, TraceRecord>> {
-        return locationIndex[fileName]?.get(lineNumber) ?: emptyList()
+        return TraceSnapshot.of(dataByMarker)
     }
 
     fun buildDebugSummary(): String {
+        val currentSnapshot = snapshot
         val projectPath = project.basePath ?: "<unknown>"
         val tracesDir = project.basePath?.let { ThreadingHighlighterConfig.findTracesPath(it) }
 
-        if (traceDataByMarker.isEmpty()) {
+        if (currentSnapshot.isEmpty) {
             return buildString {
                 appendLine("No traces loaded.")
                 appendLine()
@@ -86,7 +105,7 @@ class TraceManager(private val project: Project) {
             }
         }
 
-        val byFile = buildLocationSummary()
+        val byFile = buildLocationSummary(currentSnapshot)
 
         if (byFile.isEmpty()) {
             return "Traces loaded, but none of them have fileName/lineNumber.\n" + "This usually means stack traces did not contain source file info."
@@ -95,7 +114,7 @@ class TraceManager(private val project: Project) {
         return buildString {
             appendLine("Threading Highlighter Trace Summary")
             appendLine("─".repeat(70))
-            appendLine("Total markers: ${traceDataByMarker.size}")
+            appendLine("Total markers: ${currentSnapshot.markerCount}")
             appendLine("Total files with traces: ${byFile.size}")
             appendLine()
 
@@ -112,32 +131,11 @@ class TraceManager(private val project: Project) {
         }
     }
 
-    private fun rebuildIndex() {
-        locationIndex.clear()
-        for ((_, traceData) in traceDataByMarker) {
-            for (trace in traceData.traces) {
-                val fileName = trace.fileName ?: continue
-                val lineNumber = trace.lineNumber
-                if (lineNumber <= 0) continue
-                locationIndex.computeIfAbsent(fileName) { mutableMapOf() }
-                    .computeIfAbsent(lineNumber) { mutableListOf() }.add(traceData.marker to trace)
-            }
-        }
-    }
-
-    private fun clearIndex() {
-        locationIndex.clear()
-    }
-
-    private fun buildLocationSummary(): Map<String, List<Triple<String, String, Int>>> {
+    private fun buildLocationSummary(snapshot: TraceSnapshot): Map<String, List<Triple<String, String, Int>>> {
         val byFile = mutableMapOf<String, MutableList<Triple<String, String, Int>>>()
-        for ((fileName, lineMap) in locationIndex) {
-            for ((lineNumber, records) in lineMap) {
-                for ((marker, trace) in records) {
-                    byFile.computeIfAbsent(fileName) { mutableListOf() }
-                        .add(Triple(marker.markerFqn(), trace.className, lineNumber))
-                }
-            }
+        snapshot.forEachLocation { fileName, line, marker, trace ->
+            byFile.computeIfAbsent(fileName) { mutableListOf() }
+                .add(Triple(marker.markerFqn(), trace.className, line))
         }
         return byFile
     }
