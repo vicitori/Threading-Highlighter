@@ -52,8 +52,25 @@ class ThreadingMarkerAnnotator : Annotator {
         lineNumber: Int
     ): List<Pair<MarkerInfo, TraceRecord>>? {
         val traceManager = TraceManager.getInstance(element.project)
+        val filePath = element.containingFile?.virtualFile?.path
         val records = traceManager.getRecordsForLocation(fileName, lineNumber)
+            // StackTraceElement.fileName is a simple name, so two files with the same
+            // name in different packages would collide: keep only records whose class
+            // package matches this file's path
+            .filter { (_, trace) -> filePathMatchesClass(filePath, trace.className) }
         return records.ifEmpty { null }
+    }
+
+    private fun filePathMatchesClass(filePath: String?, className: String): Boolean {
+        // path unknown (e.g. in-memory file): cannot disambiguate, keep the record
+        if (filePath == null) return true
+
+        // nested classes use '$', so substringBeforeLast('.') yields the package
+        val packageName = className.substringBeforeLast('.', missingDelimiterValue = "")
+        if (packageName.isEmpty()) return true // default package: nothing to match
+
+        val packagePath = packageName.replace('.', '/')
+        return filePath.replace('\\', '/').contains("/$packagePath/")
     }
 
     private fun isFirstElementOnLine(
