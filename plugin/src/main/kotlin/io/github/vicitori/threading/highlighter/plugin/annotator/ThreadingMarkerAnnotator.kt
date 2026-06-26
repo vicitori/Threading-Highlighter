@@ -12,10 +12,7 @@ import io.github.vicitori.threading.highlighter.common.trace.TraceRecord
 import io.github.vicitori.threading.highlighter.plugin.icons.PluginIcons
 import io.github.vicitori.threading.highlighter.plugin.services.MarkerStateService
 import io.github.vicitori.threading.highlighter.plugin.services.TraceManager
-import java.awt.Font
-import javax.swing.JOptionPane
-import javax.swing.JScrollPane
-import javax.swing.JTextArea
+import io.github.vicitori.threading.highlighter.plugin.ui.TextInfoDialog
 
 /**
  * Draws a gutter icon on lines that the agent recorded as threading markers.
@@ -120,7 +117,8 @@ class ThreadingMarkerAnnotator : Annotator {
             override fun getClickAction(): AnAction {
                 return object : AnAction() {
                     override fun actionPerformed(e: AnActionEvent) {
-                        showMarkerDetails(records, fileName, lineNumber)
+                        val project = e.project ?: return
+                        showMarkerDetails(project, records, fileName, lineNumber)
                     }
                 }
             }
@@ -128,20 +126,13 @@ class ThreadingMarkerAnnotator : Annotator {
     }
 
     private fun showMarkerDetails(
+        project: com.intellij.openapi.project.Project,
         records: List<Pair<MarkerInfo, TraceRecord>>,
         fileName: String,
         lineNumber: Int
     ) {
         val message = buildDetailsMessage(records, fileName, lineNumber)
-        val textArea = createStyledTextArea(message)
-        val scrollPane = JScrollPane(textArea)
-
-        JOptionPane.showMessageDialog(
-            null,
-            scrollPane,
-            "Threading Marker Details",
-            JOptionPane.INFORMATION_MESSAGE
-        )
+        TextInfoDialog(project, "Threading Marker Details", message).show()
     }
 
     private fun buildDetailsMessage(
@@ -160,21 +151,6 @@ class ThreadingMarkerAnnotator : Annotator {
             appendLine("  Last seen: ${java.time.Instant.ofEpochMilli(trace.lastSeenTimestampEpochMillis)}")
             appendLine("  Trace: ${trace.className}.${trace.methodName}")
             appendLine()
-        }
-    }
-
-    private fun createStyledTextArea(message: String): JTextArea {
-        return JTextArea(message).apply {
-            font = Font("JetBrains Mono", Font.PLAIN, 14)
-            isEditable = false
-            background = null
-            lineWrap = false
-            wrapStyleWord = false
-
-            val lines = message.lines()
-            val maxLineLength = lines.maxOfOrNull { it.length } ?: 60
-            rows = minOf(lines.size + 2, 35)
-            columns = minOf(maxLineLength + 10, 180)
         }
     }
 }
