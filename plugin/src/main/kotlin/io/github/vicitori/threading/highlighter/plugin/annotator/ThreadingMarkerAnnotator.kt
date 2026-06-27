@@ -101,45 +101,51 @@ class ThreadingMarkerAnnotator : Annotator {
         fileName: String,
         lineNumber: Int,
         tooltipMessage: String
-    ): GutterIconRenderer {
-        return object : GutterIconRenderer() {
-            override fun getIcon() = PluginIcons.ThreadingMarker
-            override fun getTooltipText() = tooltipMessage
-            override fun isNavigateAction() = true
-            override fun getAlignment() = Alignment.LEFT
+    ): GutterIconRenderer = ThreadingGutterIconRenderer(records, fileName, lineNumber, tooltipMessage)
+}
 
-            override fun equals(other: Any?): Boolean {
-                return other is GutterIconRenderer && other.icon == icon
-            }
+/**
+ * Gutter renderer for a single line's threading markers.
+ *
+ * [equals]/[hashCode] intentionally reflect data identity (file, line, record count)
+ * rather than the shared icon: the IDE dedups renderers per position to detect
+ * changes, so an icon-based equals would make every renderer look equal and leave
+ * stale tooltips after a reload.
+ */
+private class ThreadingGutterIconRenderer(
+    private val records: List<Pair<MarkerInfo, TraceRecord>>,
+    private val fileName: String,
+    private val lineNumber: Int,
+    private val tooltipMessage: String
+) : GutterIconRenderer() {
+    override fun getIcon() = PluginIcons.ThreadingMarker
+    override fun getTooltipText() = tooltipMessage
+    override fun isNavigateAction() = true
+    override fun getAlignment() = Alignment.LEFT
 
-            override fun hashCode(): Int = icon.hashCode()
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is ThreadingGutterIconRenderer) return false
+        return fileName == other.fileName &&
+                lineNumber == other.lineNumber &&
+                records.size == other.records.size
+    }
 
-            override fun getClickAction(): AnAction {
-                return object : AnAction() {
-                    override fun actionPerformed(e: AnActionEvent) {
-                        val project = e.project ?: return
-                        showMarkerDetails(project, records, fileName, lineNumber)
-                    }
-                }
-            }
+    override fun hashCode(): Int {
+        var result = fileName.hashCode()
+        result = 31 * result + lineNumber
+        result = 31 * result + records.size
+        return result
+    }
+
+    override fun getClickAction(): AnAction = object : AnAction() {
+        override fun actionPerformed(e: AnActionEvent) {
+            val project = e.project ?: return
+            TextInfoDialog(project, "Threading Marker Details", buildDetailsMessage()).show()
         }
     }
 
-    private fun showMarkerDetails(
-        project: com.intellij.openapi.project.Project,
-        records: List<Pair<MarkerInfo, TraceRecord>>,
-        fileName: String,
-        lineNumber: Int
-    ) {
-        val message = buildDetailsMessage(records, fileName, lineNumber)
-        TextInfoDialog(project, "Threading Marker Details", message).show()
-    }
-
-    private fun buildDetailsMessage(
-        records: List<Pair<MarkerInfo, TraceRecord>>,
-        fileName: String,
-        lineNumber: Int
-    ): String = buildString {
+    private fun buildDetailsMessage(): String = buildString {
         appendLine("Threading Marker Detected")
         appendLine("─".repeat(60))
         appendLine("Location: $fileName:$lineNumber")
