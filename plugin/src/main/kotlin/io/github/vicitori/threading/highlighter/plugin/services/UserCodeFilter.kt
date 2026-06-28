@@ -1,8 +1,12 @@
 package io.github.vicitori.threading.highlighter.plugin.services
 
+import com.intellij.openapi.diagnostic.logger
+import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.vfs.VirtualFile
+
+private val LOG = logger<UserCodeFilter>()
 
 /**
  * Decides which stack frames belong to the user's own code.
@@ -42,7 +46,10 @@ object UserCodeFilter {
             }
             val sorted = packages.sorted()
             return sorted
-        } catch (_: Exception) {
+        } catch (e: ProcessCanceledException) {
+            throw e // platform cancellation must never be swallowed
+        } catch (e: Exception) {
+            LOG.warn("Failed to detect user packages from project roots", e)
             return emptyList()
         }
     }

@@ -1,5 +1,7 @@
 package io.github.vicitori.threading.highlighter.plugin.services
 
+import com.intellij.openapi.diagnostic.logger
+import com.intellij.openapi.progress.ProcessCanceledException
 import io.github.vicitori.threading.highlighter.common.config.ThreadingHighlighterConfig
 import io.github.vicitori.threading.highlighter.common.marker.MarkerInfo
 import io.github.vicitori.threading.highlighter.common.trace.TraceRecord
@@ -7,6 +9,8 @@ import kotlinx.serialization.json.Json
 import java.nio.file.Path
 import kotlin.io.path.exists
 import kotlin.io.path.readLines
+
+private val LOG = logger<TraceRepository>()
 
 /**
  * Reads a marker's JSONL trace file into [TraceRecord]s.
@@ -46,7 +50,10 @@ class TraceRepository {
     private fun parseTraceLine(line: String): TraceRecord? {
         return try {
             json.decodeFromString<TraceRecord>(line)
-        } catch (_: Exception) {
+        } catch (e: ProcessCanceledException) {
+            throw e // platform cancellation must never be swallowed
+        } catch (e: Exception) {
+            LOG.warn("Failed to parse trace line: ${line.take(100)}", e)
             null
         }
     }
