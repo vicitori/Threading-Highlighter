@@ -22,7 +22,7 @@ class SlowOperationOnEdtAction : AnAction("Slow Operation Marker Only") {
 
     private fun showNotification(project: Project) {
         NotificationGroupManager.getInstance()
-            .getNotificationGroup("Main Group")
+            .getNotificationGroup("Threading Highlighter")
             .createNotification("Slow operation completed on EDT", NotificationType.INFORMATION)
             .notify(project)
     }

@@ -18,7 +18,7 @@ class EdtMarkerAction : AnAction("EDT Marker Only") {
 
     private fun showNotification(project: Project) {
         NotificationGroupManager.getInstance()
-            .getNotificationGroup("Main Group")
+            .getNotificationGroup("Threading Highlighter")
             .createNotification("EDT assertion passed - running on Event Dispatch Thread", NotificationType.INFORMATION)
             .notify(project)
     }

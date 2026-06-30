@@ -29,7 +29,7 @@ class NonEdtMarkerAction : AnAction("Non-EDT Marker Only") {
 
     private fun showNotification(project: Project, message: String) {
         NotificationGroupManager.getInstance()
-            .getNotificationGroup("Main Group")
+            .getNotificationGroup("Threading Highlighter")
             .createNotification(message, NotificationType.INFORMATION)
             .notify(project)
     }
