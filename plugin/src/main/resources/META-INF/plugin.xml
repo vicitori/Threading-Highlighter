@@ -36,6 +36,9 @@
                    implementationClass="io.github.vicitori.threading.highlighter.plugin.annotator.ThreadingMarkerAnnotator"/>
 
         <notificationGroup id="Threading Highlighter" displayType="BALLOON"/>
+
+        <postStartupActivity
+            implementation="io.github.vicitori.threading.highlighter.plugin.services.TraceFileWatcher"/>
     </extensions>
 
     <actions>
