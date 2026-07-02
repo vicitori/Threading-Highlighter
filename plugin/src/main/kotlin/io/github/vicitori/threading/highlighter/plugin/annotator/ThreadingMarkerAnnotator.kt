@@ -32,7 +32,13 @@ class ThreadingMarkerAnnotator : Annotator {
 
         if (!isFirstElementOnLine(element, document, lineNumber)) return
 
-        addGutterIcon(holder, element, records, containingFile.name, lineNumber)
+        // the file may have been edited after the trace was recorded, so the line
+        // number can be off: warn the user instead of showing it as ground truth
+        val fileTimestamp = containingFile.virtualFile?.timeStamp ?: 0L
+        val newestTrace = records.maxOf { (_, trace) -> trace.lastSeenTimestampEpochMillis }
+        val stale = fileTimestamp > newestTrace
+
+        addGutterIcon(holder, element, records, containingFile.name, lineNumber, stale)
     }
 
     private fun shouldAnnotate(element: PsiElement): Boolean {
@@ -87,12 +93,14 @@ class ThreadingMarkerAnnotator : Annotator {
         element: PsiElement,
         records: List<Pair<MarkerInfo, TraceRecord>>,
         fileName: String,
-        lineNumber: Int
+        lineNumber: Int,
+        stale: Boolean
     ) {
-        val message = "Threading marker detected: ${records.size} occurrence(s)"
+        val staleSuffix = if (stale) " (file edited after recording, line may be inaccurate)" else ""
+        val message = "Threading marker detected: ${records.size} occurrence(s)$staleSuffix"
         holder.newAnnotation(HighlightSeverity.INFORMATION, message)
             .range(element.textRange)
-            .gutterIconRenderer(createGutterIconRenderer(records, fileName, lineNumber, message))
+            .gutterIconRenderer(createGutterIconRenderer(records, fileName, lineNumber, message, stale))
             .create()
     }
 
@@ -100,8 +108,9 @@ class ThreadingMarkerAnnotator : Annotator {
         records: List<Pair<MarkerInfo, TraceRecord>>,
         fileName: String,
         lineNumber: Int,
-        tooltipMessage: String
-    ): GutterIconRenderer = ThreadingGutterIconRenderer(records, fileName, lineNumber, tooltipMessage)
+        tooltipMessage: String,
+        stale: Boolean
+    ): GutterIconRenderer = ThreadingGutterIconRenderer(records, fileName, lineNumber, tooltipMessage, stale)
 }
 
 /**
@@ -116,7 +125,8 @@ private class ThreadingGutterIconRenderer(
     private val records: List<Pair<MarkerInfo, TraceRecord>>,
     private val fileName: String,
     private val lineNumber: Int,
-    private val tooltipMessage: String
+    private val tooltipMessage: String,
+    private val stale: Boolean
 ) : GutterIconRenderer() {
     override fun getIcon() = PluginIcons.ThreadingMarker
     override fun getTooltipText() = tooltipMessage
@@ -128,13 +138,15 @@ private class ThreadingGutterIconRenderer(
         if (other !is ThreadingGutterIconRenderer) return false
         return fileName == other.fileName &&
                 lineNumber == other.lineNumber &&
-                records.size == other.records.size
+                records.size == other.records.size &&
+                stale == other.stale
     }
 
     override fun hashCode(): Int {
         var result = fileName.hashCode()
         result = 31 * result + lineNumber
         result = 31 * result + records.size
+        result = 31 * result + stale.hashCode()
         return result
     }
 
@@ -149,6 +161,9 @@ private class ThreadingGutterIconRenderer(
         appendLine("Threading Marker Detected")
         appendLine("─".repeat(60))
         appendLine("Location: $fileName:$lineNumber")
+        if (stale) {
+            appendLine("⚠ File was edited after this trace was recorded; the line number may be inaccurate.")
+        }
         appendLine()
 
         for ((marker, trace) in records) {
