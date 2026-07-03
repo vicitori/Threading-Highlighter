@@ -8,8 +8,11 @@ import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.asm.Advice;
 import net.bytebuddy.matcher.ElementMatchers;
 
+import io.github.vicitori.threading.highlighter.agent.common.AgentLog;
+
 import java.lang.instrument.Instrumentation;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Agent entry point. It installs Byte Buddy advice on the known threading assertion
@@ -22,6 +25,10 @@ import java.util.List;
  */
 public final class ThreadingHighlighterAgent {
 
+    // premain and agentmain can both fire (e.g. -javaagent at startup, then an attach):
+    // install only once so we never create a second TraceWriter, scheduler and shutdown hook
+    private static final AtomicBoolean INSTALLED = new AtomicBoolean(false);
+
     public static void premain(String agentArgs, Instrumentation inst) {
         install(inst);
     }
@@ -31,6 +38,11 @@ public final class ThreadingHighlighterAgent {
     }
 
     private static void install(Instrumentation inst) {
+        if (!INSTALLED.compareAndSet(false, true)) {
+            AgentLog.info("Agent already installed, skipping duplicate initialization");
+            return;
+        }
+
         MarkerAdvice.setWriter(new TraceWriter());
         AgentBuilder agent = configureAgent();
         List<MarkerInfo> markers = Markers.getAll();
