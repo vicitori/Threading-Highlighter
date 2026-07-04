@@ -9,10 +9,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -23,15 +23,19 @@ import java.util.concurrent.TimeUnit;
  * <p>Records are grouped by marker. The same code location (key
  * {@code class#method@line}) is kept only once, with its latest timestamp. A daemon
  * thread writes the buffer to disk on a timer, and a shutdown hook writes the rest
- * when the JVM stops. All access to the buffer goes through one lock.
+ * when the JVM stops.
+ *
+ * <p>The instrumented assertions fire from many host threads thousands of times per
+ * second, so the buffer avoids a single global lock: markers live in a
+ * {@link ConcurrentHashMap}, and only the small per-marker map is synchronized. This
+ * keeps the observer from serializing the very threading behavior it measures.
  */
 public final class TraceWriter {
     private static final String FLUSH_INTERVAL_PROPERTY = "threading.highlighter.flush.interval.minutes";
     private static final long DEFAULT_FLUSH_INTERVAL_MINUTES = 15;
 
     private final Path tracesDir;
-    private final Object lock = new Object();
-    private final Map<String, Map<String, TraceRecord>> tracesByMarker = new HashMap<>();
+    private final Map<String, Map<String, TraceRecord>> tracesByMarker = new ConcurrentHashMap<>();
     private final StackCapture stackCapture = new StackCapture();
     private final ScheduledExecutorService scheduler;
     private volatile boolean isShuttingDown = false;
@@ -74,8 +78,10 @@ public final class TraceWriter {
         long timestamp = System.currentTimeMillis();
         List<StackTraceElement> frames = stackCapture.capture();
 
-        synchronized (lock) {
-            Map<String, TraceRecord> traces = tracesByMarker.computeIfAbsent(markerFqn, k -> new LinkedHashMap<>());
+        Map<String, TraceRecord> traces = tracesByMarker.computeIfAbsent(markerFqn, k -> new LinkedHashMap<>());
+        // lock only this marker's map, not the whole buffer, so different markers and
+        // the flush thread do not contend on a single global lock
+        synchronized (traces) {
             for (StackTraceElement element : frames) {
                 TraceRecord record = TraceRecordBuilder.fromStackTraceElement(element, timestamp);
                 String key = record.getKey();
@@ -98,54 +104,45 @@ public final class TraceWriter {
     }
 
     private void flushAllOnce() {
-        Map<String, Map<String, TraceRecord>> snapshot;
-        synchronized (lock) {
-            if (tracesByMarker.isEmpty()) {
-                return;
-            }
-            // drain: detach the buffer under the lock so new record() calls
-            // write into fresh inner maps while we do slow I/O outside the lock
-            snapshot = new HashMap<>(tracesByMarker);
-            tracesByMarker.clear();
-        }
-
         int flushedRecords = 0;
-        Map<String, Map<String, TraceRecord>> failed = null;
-        for (Map.Entry<String, Map<String, TraceRecord>> entry : snapshot.entrySet()) {
+        int flushedMarkers = 0;
+        for (Map.Entry<String, Map<String, TraceRecord>> entry : tracesByMarker.entrySet()) {
             String markerFqn = entry.getKey();
-            Map<String, TraceRecord> traces = entry.getValue();
-            if (appendTracesToFile(markerFqn, traces)) {
-                flushedRecords += traces.size();
+            Map<String, TraceRecord> markerBuffer = entry.getValue();
+
+            // drain this marker under its own lock, so record() keeps writing into
+            // the same map while the slow I/O below runs without holding any lock
+            Map<String, TraceRecord> drained;
+            synchronized (markerBuffer) {
+                if (markerBuffer.isEmpty()) {
+                    continue;
+                }
+                drained = new LinkedHashMap<>(markerBuffer);
+                markerBuffer.clear();
+            }
+
+            if (appendTracesToFile(markerFqn, drained)) {
+                flushedRecords += drained.size();
+                flushedMarkers++;
             } else {
                 // restore: keep failed data for the next flush instead of losing it
-                if (failed == null) {
-                    failed = new HashMap<>();
-                }
-                failed.put(markerFqn, traces);
+                restoreFailed(markerBuffer, drained);
             }
-        }
-
-        if (failed != null) {
-            restoreFailed(failed);
         }
 
         if (!isShuttingDown && flushedRecords > 0) {
-            AgentLog.debug("Flushed " + flushedRecords + " trace records for " + snapshot.size() + " markers");
+            AgentLog.debug("Flushed " + flushedRecords + " trace records for " + flushedMarkers + " markers");
         }
     }
 
-    // Returns failed writes to the buffer for a later retry, merging per key (newest timestamp wins).
-    private void restoreFailed(Map<String, Map<String, TraceRecord>> failed) {
-        synchronized (lock) {
-            for (Map.Entry<String, Map<String, TraceRecord>> entry : failed.entrySet()) {
-                tracesByMarker.merge(entry.getKey(), entry.getValue(), (live, restored) -> {
-                    restored.forEach((key, restoredRecord) -> live.merge(key, restoredRecord,
-                            (liveRecord, oldRecord) ->
-                                    liveRecord.lastSeenTimestampEpochMillis() >= oldRecord.lastSeenTimestampEpochMillis()
-                                            ? liveRecord : oldRecord));
-                    return live;
-                });
-            }
+    // Returns failed writes to the marker buffer for a later retry, merging per key
+    // (newest timestamp wins) so records added during the failed I/O are not lost.
+    private void restoreFailed(Map<String, TraceRecord> markerBuffer, Map<String, TraceRecord> drained) {
+        synchronized (markerBuffer) {
+            drained.forEach((key, oldRecord) -> markerBuffer.merge(key, oldRecord,
+                    (liveRecord, restoredRecord) ->
+                            liveRecord.lastSeenTimestampEpochMillis() >= restoredRecord.lastSeenTimestampEpochMillis()
+                                    ? liveRecord : restoredRecord));
         }
     }
 
