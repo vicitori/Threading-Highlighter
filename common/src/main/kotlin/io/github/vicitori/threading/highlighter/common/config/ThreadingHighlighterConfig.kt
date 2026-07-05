@@ -14,8 +14,22 @@ object ThreadingHighlighterConfig {
         return Path.of(baseDir).resolve(TRACES_DIR_NAME)
     }
 
+    /**
+     * Resolves the traces directory the agent writes to.
+     *
+     * The agent writes deterministically to `<project.dir>/[TRACES_DIR_NAME]`, where
+     * `project.dir` comes from the [PROJECT_DIR_PROPERTY] system property. To keep the
+     * writer (agent) and reader (plugin) in sync, this method honors the **same**
+     * property first: when it is set, the path is deterministic and identical on both
+     * sides. Only when it is absent do we fall back to a best-effort heuristic search.
+     */
     @JvmStatic
     fun findTracesPath(baseDir: String): Path {
+        // explicit shared contract: same property the agent uses, no guessing
+        System.getProperty(PROJECT_DIR_PROPERTY)?.let { explicitDir ->
+            return getTracesPath(explicitDir)
+        }
+
         val basePath = Path.of(baseDir)
 
         val currentDirTraces = basePath.resolve(TRACES_DIR_NAME)
