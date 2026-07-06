@@ -3,24 +3,16 @@ package io.github.vicitori.threading.highlighter.agent.trace;
 import io.github.vicitori.threading.highlighter.agent.common.TraceRecord;
 
 /**
- * Builds {@link TraceRecord}s from stack frames and writes them as JSON lines by hand.
+ * Encodes a {@link TraceRecord} into a single JSON line by hand.
  *
  * <p>The agent writes JSON without a library on purpose, so it stays free of extra
- * dependencies. The field names here must match what the plugin reads.
+ * dependencies (see A1). This is the write half of the trace-line contract; the
+ * plugin owns the matching {@code decode} half. Field names here must stay in sync
+ * with what the plugin reads.
  */
-public final class TraceRecordBuilder {
+public final class TraceLineCodec {
 
-    public static TraceRecord fromStackTraceElement(StackTraceElement element, long timestampMillis) {
-        return new TraceRecord(
-                element.getClassName(),
-                element.getMethodName(),
-                element.getFileName(),
-                element.getLineNumber(),
-                timestampMillis
-        );
-    }
-
-    public static String toJsonLine(TraceRecord record) {
+    public static String encode(TraceRecord record) {
         StringBuilder sb = new StringBuilder(512);
         sb.append('{');
         sb.append("\"className\":\"").append(escape(record.className())).append("\",");

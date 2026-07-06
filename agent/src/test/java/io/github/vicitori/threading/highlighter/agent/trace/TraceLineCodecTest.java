@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * kotlinx.serialization model and library the plugin uses. This guards the contract
  * between the two independently-built sides.
  */
-class TraceRecordBuilderTest {
+class TraceLineCodecTest {
 
     private static final Json JSON = Json.Default;
 
@@ -22,7 +22,7 @@ class TraceRecordBuilderTest {
     }
 
     private static TraceRecord roundTrip(TraceRecord original) {
-        String jsonLine = TraceRecordBuilder.toJsonLine(toAgentRecord(original));
+        String jsonLine = TraceLineCodec.encode(toAgentRecord(original));
         return decode(jsonLine);
     }
 
@@ -76,7 +76,7 @@ class TraceRecordBuilderTest {
         // U+0000-U+001F (e.g. NUL, US) must be escaped as \\uXXXX to stay valid JSON
         TraceRecord original = record("a\u0000b\u001fc", "m\u0007", "file.java");
 
-        String jsonLine = TraceRecordBuilder.toJsonLine(toAgentRecord(original));
+        String jsonLine = TraceLineCodec.encode(toAgentRecord(original));
 
         assertTrue(jsonLine.contains("\\u0000"), jsonLine);
         assertTrue(jsonLine.contains("\\u001f"), jsonLine);

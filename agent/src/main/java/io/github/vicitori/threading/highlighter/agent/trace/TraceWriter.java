@@ -83,7 +83,7 @@ public final class TraceWriter {
         // the flush thread do not contend on a single global lock
         synchronized (traces) {
             for (StackTraceElement element : frames) {
-                TraceRecord record = TraceRecordBuilder.fromStackTraceElement(element, timestamp);
+                TraceRecord record = StackFrameMapper.toRecord(element, timestamp);
                 String key = record.getKey();
 
                 TraceRecord existing = traces.get(key);
@@ -171,7 +171,7 @@ public final class TraceWriter {
             try (BufferedWriter out = Files.newBufferedWriter(markerFilePath, StandardCharsets.UTF_8,
                     StandardOpenOption.CREATE, StandardOpenOption.APPEND)) {
                 for (TraceRecord record : traces.values()) {
-                    out.write(TraceRecordBuilder.toJsonLine(record));
+                    out.write(TraceLineCodec.encode(record));
                     out.newLine();
                 }
             }
