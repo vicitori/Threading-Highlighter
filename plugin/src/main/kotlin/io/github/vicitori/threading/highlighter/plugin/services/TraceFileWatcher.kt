@@ -10,7 +10,8 @@ import com.intellij.util.Alarm
 import io.github.vicitori.threading.highlighter.common.config.ThreadingHighlighterConfig
 
 /**
- * Auto-reloads traces when the agent writes to the traces directory.
+ * Loads traces on project open and auto-reloads them when the agent writes to the
+ * traces directory.
  *
  * Separation of concerns: this watcher only observes the file system and, after a
  * short debounce, asks [TraceManager] to reload. It never parses `.jsonl` itself.
@@ -34,6 +35,11 @@ class TraceFileWatcher : ProjectActivity {
                 }
             }
         )
+
+        // initial load: the service starts empty and VFS events only fire on later
+        // changes, so without this an already-populated traces dir would stay hidden
+        // until a manual reload
+        TraceManager.getInstance(project).reloadTraces()
     }
 
     private fun VFileEvent.isInTracesDir(): Boolean =
