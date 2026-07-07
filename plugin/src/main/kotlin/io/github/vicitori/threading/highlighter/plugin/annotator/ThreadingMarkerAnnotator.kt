@@ -57,23 +57,36 @@ class ThreadingMarkerAnnotator : Annotator {
         val traceManager = TraceManager.getInstance(element.project)
         val filePath = element.containingFile?.virtualFile?.path
         val records = traceManager.getRecordsForLocation(fileName, lineNumber)
-            // StackTraceElement.fileName is a simple name, so two files with the same
-            // name in different packages would collide: keep only records whose class
-            // package matches this file's path
-            .filter { (_, trace) -> filePathMatchesClass(filePath, trace.className) }
+            // StackTraceElement.fileName is a simple name, so files with the same name
+            // in different packages would collide: keep only records whose class package
+            // AND file name anchor the end of this file's path
+            .filter { (_, trace) -> pathMatchesTrace(filePath, trace) }
         return records.ifEmpty { null }
     }
 
-    private fun filePathMatchesClass(filePath: String?, className: String): Boolean {
+    private fun pathMatchesTrace(filePath: String?, trace: TraceRecord): Boolean {
         // path unknown (e.g. in-memory file): cannot disambiguate, keep the record
         if (filePath == null) return true
 
-        // nested classes use '$', so substringBeforeLast('.') yields the package
-        val packageName = className.substringBeforeLast('.', missingDelimiterValue = "")
-        if (packageName.isEmpty()) return true // default package: nothing to match
+        val normalizedPath = filePath.replace('\\', '/')
+        // nested/lambda classes use '$'; drop it before taking the package
+        val packageName = trace.className.substringBefore('$').substringBeforeLast('.', missingDelimiterValue = "")
+        val simpleFileName = trace.fileName
 
-        val packagePath = packageName.replace('.', '/')
-        return filePath.replace('\\', '/').contains("/$packagePath/")
+        // no file name from the stack frame: fall back to matching the package segment
+        if (simpleFileName == null) {
+            if (packageName.isEmpty()) return true
+            return normalizedPath.contains("/${packageName.replace('.', '/')}/")
+        }
+
+        // require the path to end with "/<package>/<file>" (or just "/<file>" for the
+        // default package), so the package and file name must both line up
+        val anchor = if (packageName.isEmpty()) {
+            "/$simpleFileName"
+        } else {
+            "/${packageName.replace('.', '/')}/$simpleFileName"
+        }
+        return normalizedPath.endsWith(anchor)
     }
 
     private fun isFirstElementOnLine(
