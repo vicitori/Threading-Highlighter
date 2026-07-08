@@ -9,6 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +34,10 @@ import java.util.concurrent.TimeUnit;
 public final class TraceWriter {
     private static final String FLUSH_INTERVAL_PROPERTY = "threading.highlighter.flush.interval.minutes";
     private static final long DEFAULT_FLUSH_INTERVAL_MINUTES = 15;
+
+    // cap unique locations per marker so a permanently failing disk (records kept via
+    // restoreFailed) cannot grow the buffer without bound; oldest entries are dropped
+    private static final int MAX_LOCATIONS_PER_MARKER = 10_000;
 
     private final Path tracesDir;
     private final Map<String, Map<String, TraceRecord>> tracesByMarker = new ConcurrentHashMap<>();
@@ -96,9 +101,10 @@ public final class TraceWriter {
                             existing.lineNumber(),
                             timestamp
                     ));
-                } else {
+                } else if (traces.size() < MAX_LOCATIONS_PER_MARKER) {
                     traces.put(key, record);
                 }
+                // else: at capacity and this is a new location, skip it (see field doc)
             }
         }
     }
@@ -143,7 +149,24 @@ public final class TraceWriter {
                     (liveRecord, restoredRecord) ->
                             liveRecord.lastSeenTimestampEpochMillis() >= restoredRecord.lastSeenTimestampEpochMillis()
                                     ? liveRecord : restoredRecord));
+            trimToLimit(markerBuffer);
         }
+    }
+
+    // Restoring can push a marker over the cap; drop the oldest locations by timestamp.
+    private void trimToLimit(Map<String, TraceRecord> markerBuffer) {
+        int overflow = markerBuffer.size() - MAX_LOCATIONS_PER_MARKER;
+        if (overflow <= 0) {
+            return;
+        }
+        markerBuffer.entrySet().stream()
+                .sorted(Comparator.comparingLong(e -> e.getValue().lastSeenTimestampEpochMillis()))
+                .limit(overflow)
+                .map(Map.Entry::getKey)
+                .toList()
+                .forEach(markerBuffer::remove);
+        AgentLog.warn("Trace buffer for a marker exceeded " + MAX_LOCATIONS_PER_MARKER
+                + " locations; dropped " + overflow + " oldest (disk write failing?)");
     }
 
     private long getFlushInterval() {
