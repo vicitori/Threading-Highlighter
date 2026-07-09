@@ -15,10 +15,10 @@
     <change-notes><![CDATA[
         <h3>0.1.0-SNAPSHOT</h3>
         <ul>
-            <li>Initial release</li>
-            <li>Support for EDT, non-EDT, and slow operation markers</li>
-            <li>Automatic trace file watching with debouncing</li>
-            <li>Fast O(1) trace queries with indexed cache</li>
+            <li>Gutter markers for EDT, non-EDT, and slow operation assertions</li>
+            <li>Traces loaded off the UI thread and served from an immutable O(1) index</li>
+            <li>Automatic trace reload on project open and on trace file changes (debounced)</li>
+            <li>Warning when a file was edited after its trace was recorded</li>
         </ul>
     ]]></change-notes>
 
