@@ -22,6 +22,15 @@ dependencies {
         intellijIdeaUltimate("2025.3.1")
         bundledPlugin("org.jetbrains.kotlin")
     }
+
+    // Pure-logic unit tests (no platform runtime needed)
+    testImplementation(platform("org.junit:junit-bom:5.11.3"))
+    testImplementation("org.junit.jupiter:junit-jupiter")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    // IntelliJ Platform test harness expects JUnit 4 on the classpath; the vintage
+    // engine satisfies it and coexists with the Jupiter tests above
+    testRuntimeOnly("org.junit.vintage:junit-vintage-engine")
+    testRuntimeOnly("junit:junit:4.13.2")
 }
 
 intellijPlatform {
@@ -54,5 +63,8 @@ intellijPlatform {
 tasks {
     named("buildPlugin") {
         dependsOn(":agent:shadowJar")
+    }
+    test {
+        useJUnitPlatform()
     }
 }
