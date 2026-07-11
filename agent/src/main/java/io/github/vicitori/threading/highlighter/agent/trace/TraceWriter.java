@@ -35,12 +35,20 @@ public final class TraceWriter {
     private static final String FLUSH_INTERVAL_PROPERTY = "threading.highlighter.flush.interval.minutes";
     private static final long DEFAULT_FLUSH_INTERVAL_MINUTES = 15;
 
+    // Optional throttle: minimum gap between full stack captures for the same marker.
+    // 0 (default) means no throttling, so data stays complete; a positive value trades
+    // completeness for a lighter hot path on very chatty projects (see CR-2).
+    private static final String MIN_CAPTURE_INTERVAL_PROPERTY = "threading.highlighter.min.capture.interval.millis";
+    private static final long DEFAULT_MIN_CAPTURE_INTERVAL_MILLIS = 0;
+
     // cap unique locations per marker so a permanently failing disk (records kept via
     // restoreFailed) cannot grow the buffer without bound; oldest entries are dropped
     private static final int MAX_LOCATIONS_PER_MARKER = 10_000;
 
     private final Path tracesDir;
     private final Map<String, Map<String, TraceRecord>> tracesByMarker = new ConcurrentHashMap<>();
+    private final Map<String, Long> lastCaptureByMarker = new ConcurrentHashMap<>();
+    private final long minCaptureIntervalMillis = getMinCaptureIntervalMillis();
     private final StackCapture stackCapture = new StackCapture();
     private final ScheduledExecutorService scheduler;
     private volatile boolean isShuttingDown = false;
@@ -81,6 +89,10 @@ public final class TraceWriter {
 
     public void record(String markerFqn) {
         long timestamp = System.currentTimeMillis();
+        if (throttled(markerFqn, timestamp)) {
+            return;
+        }
+        // capture() is the expensive part, so it runs only after the throttle check
         List<StackTraceElement> frames = stackCapture.capture();
 
         Map<String, TraceRecord> traces = tracesByMarker.computeIfAbsent(markerFqn, k -> new LinkedHashMap<>());
@@ -167,6 +179,34 @@ public final class TraceWriter {
                 .forEach(markerBuffer::remove);
         AgentLog.warn("Trace buffer for a marker exceeded " + MAX_LOCATIONS_PER_MARKER
                 + " locations; dropped " + overflow + " oldest (disk write failing?)");
+    }
+
+    // Returns true if this marker was captured too recently and should be skipped.
+    private boolean throttled(String markerFqn, long now) {
+        if (minCaptureIntervalMillis <= 0) {
+            return false;
+        }
+        Long last = lastCaptureByMarker.get(markerFqn);
+        if (last != null && now - last < minCaptureIntervalMillis) {
+            return true;
+        }
+        lastCaptureByMarker.put(markerFqn, now);
+        return false;
+    }
+
+    private long getMinCaptureIntervalMillis() {
+        try {
+            String property = System.getProperty(MIN_CAPTURE_INTERVAL_PROPERTY);
+            if (property != null) {
+                long interval = Long.parseLong(property.trim());
+                if (interval >= 0) {
+                    return interval;
+                }
+            }
+        } catch (NumberFormatException e) {
+            AgentLog.warn("Invalid min capture interval property: " + System.getProperty(MIN_CAPTURE_INTERVAL_PROPERTY));
+        }
+        return DEFAULT_MIN_CAPTURE_INTERVAL_MILLIS;
     }
 
     private long getFlushInterval() {
