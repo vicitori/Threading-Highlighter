@@ -45,7 +45,7 @@ class TraceManager(private val project: Project) {
             override fun run(indicator: ProgressIndicator) {
                 // single volatile write == happens-before for every later reader
                 snapshot = loadSnapshot()
-                stateService.enableMarkers()
+                stateService.markDataAvailable()
             }
 
             override fun onSuccess() {
