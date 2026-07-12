@@ -53,6 +53,10 @@
                     class="io.github.vicitori.threading.highlighter.plugin.actions.ShowTraceSummaryAction"
                     text="Show Trace Summary"
                     description="Display diagnostic summary of loaded traces (for debugging)"/>
+            <action id="ThreadingHighlighter.ToggleMarkers"
+                    class="io.github.vicitori.threading.highlighter.plugin.actions.ToggleMarkersAction"
+                    text="Hide Threading Markers"
+                    description="Show or hide all threading gutter markers without reloading traces"/>
         </group>
     </actions>
 </idea-plugin>
