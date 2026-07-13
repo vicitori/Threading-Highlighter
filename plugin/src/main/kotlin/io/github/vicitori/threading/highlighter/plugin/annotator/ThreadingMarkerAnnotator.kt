@@ -5,8 +5,12 @@ import com.intellij.lang.annotation.Annotator
 import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.markup.GutterIconRenderer
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
+import java.time.Instant
 import io.github.vicitori.threading.highlighter.common.marker.MarkerInfo
 import io.github.vicitori.threading.highlighter.common.trace.TraceRecord
 import io.github.vicitori.threading.highlighter.plugin.icons.PluginIcons
@@ -28,9 +32,11 @@ class ThreadingMarkerAnnotator : Annotator {
         val document = containingFile.viewProvider.document ?: return
         val lineNumber = document.getLineNumber(element.textRange.startOffset) + 1
 
-        val records = getMarkerRecords(element, containingFile.name, lineNumber) ?: return
-
+        // cheap positional filter first: it rejects almost every leaf element before
+        // we do the more expensive trace lookup and path matching
         if (!isFirstElementOnLine(element, document, lineNumber)) return
+
+        val records = getMarkerRecords(element, containingFile.name, lineNumber) ?: return
 
         // the file may have been edited after the trace was recorded, so the line
         // number can be off: warn the user instead of showing it as ground truth
@@ -91,14 +97,15 @@ class ThreadingMarkerAnnotator : Annotator {
 
     private fun isFirstElementOnLine(
         element: PsiElement,
-        document: com.intellij.openapi.editor.Document,
+        document: Document,
         lineNumber: Int
     ): Boolean {
         val lineStartOffset = document.getLineStartOffset(lineNumber - 1)
         val lineEndOffset = document.getLineEndOffset(lineNumber - 1)
-        val lineText = document.getText(com.intellij.openapi.util.TextRange(lineStartOffset, lineEndOffset))
-        val firstNonWhitespaceOffset = lineStartOffset + lineText.indexOfFirst { !it.isWhitespace() }
-        return element.textRange.startOffset == firstNonWhitespaceOffset
+        val lineText = document.getText(TextRange(lineStartOffset, lineEndOffset))
+        val firstNonWhitespaceIndex = lineText.indexOfFirst { !it.isWhitespace() }
+        if (firstNonWhitespaceIndex < 0) return false // blank line: nothing to anchor to
+        return element.textRange.startOffset == lineStartOffset + firstNonWhitespaceIndex
     }
 
     private fun addGutterIcon(
@@ -143,6 +150,7 @@ private class ThreadingGutterIconRenderer(
 ) : GutterIconRenderer() {
     override fun getIcon() = PluginIcons.ThreadingMarker
     override fun getTooltipText() = tooltipMessage
+    // click opens a details popup rather than navigating to code
     override fun isNavigateAction() = true
     override fun getAlignment() = Alignment.LEFT
 
@@ -182,7 +190,7 @@ private class ThreadingGutterIconRenderer(
         for ((marker, trace) in records) {
             appendLine("Marker: ${marker.displayName}")
             appendLine("  Description: ${marker.description}")
-            appendLine("  Last seen: ${java.time.Instant.ofEpochMilli(trace.lastSeenTimestampEpochMillis)}")
+            appendLine("  Last seen: ${Instant.ofEpochMilli(trace.lastSeenTimestampEpochMillis)}")
             appendLine("  Trace: ${trace.className}.${trace.methodName}")
             appendLine()
         }
