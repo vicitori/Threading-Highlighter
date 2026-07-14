@@ -5,6 +5,7 @@ import com.intellij.notification.NotificationType
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.project.Project
 
 class ChainedMarkersAction : AnAction("Chained Markers Example") {
 
@@ -25,13 +26,13 @@ class ChainedMarkersAction : AnAction("Chained Markers Example") {
         showNotification(project, "Started chained operations. Check gutter icons for markers!")
     }
 
-    private fun processDataFromBackground(project: com.intellij.openapi.project.Project) {
+    private fun processDataFromBackground(project: Project) {
         showNotification(project, "[Background] Processing data from background thread")
         val result = performCalculation(100)
         showNotification(project, "[Background] Result: $result")
     }
 
-    private fun complexOperation(project: com.intellij.openapi.project.Project) {
+    private fun complexOperation(project: Project) {
         showNotification(project, "[Complex] Starting complex operation")
 
         val calculationResult = performCalculation(256)
@@ -46,7 +47,7 @@ class ChainedMarkersAction : AnAction("Chained Markers Example") {
         return value * 2
     }
 
-    private fun slowEdtOperation(project: com.intellij.openapi.project.Project) {
+    private fun slowEdtOperation(project: Project) {
         ApplicationManager.getApplication().invokeLater {
             ApplicationManager.getApplication().assertIsDispatchThread()
             Thread.sleep(50)
@@ -54,7 +55,7 @@ class ChainedMarkersAction : AnAction("Chained Markers Example") {
         }
     }
 
-    private fun showNotification(project: com.intellij.openapi.project.Project, message: String) {
+    private fun showNotification(project: Project, message: String) {
         NotificationGroupManager.getInstance()
             .getNotificationGroup("Threading Highlighter")
             .createNotification(message, NotificationType.INFORMATION)
