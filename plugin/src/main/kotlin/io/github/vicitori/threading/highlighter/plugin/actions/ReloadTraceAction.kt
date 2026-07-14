@@ -23,7 +23,7 @@ class ReloadTraceAction : AnAction() {
         // reload runs in the background and restarts highlighting itself;
         // notify the user only once the new snapshot is actually published
         TraceManager.getInstance(project).reloadTraces {
-            val message = "Threading traces reloaded. Check IDE logs for details (Help → Show Log)."
+            val message = "Use Tools | Threading Highlighter | Show Trace Summary for details."
             NotificationGroupManager.getInstance().getNotificationGroup("Threading Highlighter").createNotification(
                 "Threading traces reloaded", message, NotificationType.INFORMATION
             ).notify(project)
