@@ -17,6 +17,7 @@ class SlowOperationOnEdtAction : AnAction("Slow Operation Marker Only") {
     }
 
     private fun performSlowOperation() {
+        // intentional slow operation for the demo; the assertion above flags it
         Thread.sleep(100)
     }
 

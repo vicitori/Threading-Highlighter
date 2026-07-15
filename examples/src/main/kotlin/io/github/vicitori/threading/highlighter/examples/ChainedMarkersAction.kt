@@ -43,6 +43,7 @@ class ChainedMarkersAction : AnAction("Chained Markers Example") {
 
     private fun performCalculation(value: Int): Int {
         ApplicationManager.getApplication().assertIsNonDispatchThread()
+        // simulated work on a pooled thread (safe to block here, not the EDT)
         Thread.sleep(50)
         return value * 2
     }
@@ -50,6 +51,7 @@ class ChainedMarkersAction : AnAction("Chained Markers Example") {
     private fun slowEdtOperation(project: Project) {
         ApplicationManager.getApplication().invokeLater {
             ApplicationManager.getApplication().assertIsDispatchThread()
+            // intentional EDT block for the demo; this is the anti-pattern the tool flags
             Thread.sleep(50)
             showNotification(project, "[EDT] Slow EDT operation completed")
         }

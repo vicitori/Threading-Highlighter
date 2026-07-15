@@ -24,6 +24,7 @@ class NonEdtMarkerAction : AnAction("Non-EDT Marker Only") {
     }
 
     private fun performBackgroundWork() {
+        // simulated work on a pooled thread (safe to block here, not the EDT)
         Thread.sleep(500)
     }
 
