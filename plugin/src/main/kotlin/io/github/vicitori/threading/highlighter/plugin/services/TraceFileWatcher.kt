@@ -1,6 +1,8 @@
 package io.github.vicitori.threading.highlighter.plugin.services
 
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.components.Service
+import com.intellij.openapi.components.service
 import com.intellij.openapi.startup.ProjectActivity
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.openapi.vfs.newvfs.BulkFileListener
@@ -50,12 +52,11 @@ class TraceFileWatcher : ProjectActivity {
  * Project-scoped [Disposable] that ties the watcher's listener and alarm to the
  * project lifetime, so they are cleaned up when the project closes.
  */
-@com.intellij.openapi.components.Service(com.intellij.openapi.components.Service.Level.PROJECT)
+@Service(Service.Level.PROJECT)
 class TraceWatcherDisposable : Disposable {
     override fun dispose() = Unit
 
     companion object {
-        fun getInstance(project: Project): TraceWatcherDisposable =
-            project.getService(TraceWatcherDisposable::class.java)
+        fun getInstance(project: Project): TraceWatcherDisposable = project.service()
     }
 }
