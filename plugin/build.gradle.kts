@@ -60,11 +60,23 @@ intellijPlatform {
     }
 }
 
+// Output of the agent's shadow jar; using the task provider lets Gradle wire the
+// task dependency automatically.
+val agentShadowJar = project(":agent").tasks.named("shadowJar")
+
 tasks {
     named("buildPlugin") {
         dependsOn(":agent:shadowJar")
     }
     test {
         useJUnitPlatform()
+    }
+
+    // Bundle the agent jar inside the plugin distribution (lib/), so users get it
+    // together with the plugin from Marketplace instead of building it by hand.
+    withType<org.jetbrains.intellij.platform.gradle.tasks.PrepareSandboxTask> {
+        from(agentShadowJar) {
+            into("${pluginName.get()}/lib")
+        }
     }
 }
