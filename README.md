@@ -12,7 +12,7 @@ Threading Highlighter — это инструмент динамического
 
 ```
 ThreadingHighlighter/
-├── common/     — разделяемые модели данных
+├── common/     — разделяемые модели данных (чистая Java, без Kotlin — чтобы агент мог её шарить)
 ├── agent/      — Java-агент (Byte Buddy) для инструментации маркеров
 ├── plugin/     — IntelliJ Platform плагин для визуализации результатов
 └── examples/   — демонстрационный плагин с тестовыми actions
