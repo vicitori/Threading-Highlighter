@@ -1,13 +1,19 @@
 plugins {
-    kotlin("jvm")
-    kotlin("plugin.serialization") version "2.2.21"
+    java
+}
+
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(21))
+    }
 }
 
 dependencies {
-    // Только аннотации для сериализации (compile-only)
-    compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-core:1.7.3")
+    testImplementation(platform("org.junit:junit-bom:5.11.3"))
+    testImplementation("org.junit.jupiter:junit-jupiter")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
-kotlin {
-    jvmToolchain(21)
+tasks.test {
+    useJUnitPlatform()
 }
