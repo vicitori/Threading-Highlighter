@@ -1,8 +1,9 @@
 package io.github.vicitori.threading.highlighter.agent.trace;
 
-import io.github.vicitori.threading.highlighter.agent.common.AgentConfig;
 import io.github.vicitori.threading.highlighter.agent.common.AgentLog;
-import io.github.vicitori.threading.highlighter.agent.common.TraceRecord;
+import io.github.vicitori.threading.highlighter.common.config.ThreadingHighlighterConfig;
+import io.github.vicitori.threading.highlighter.common.trace.TraceJson;
+import io.github.vicitori.threading.highlighter.common.trace.TraceRecord;
 
 import java.io.BufferedWriter;
 import java.nio.charset.StandardCharsets;
@@ -35,9 +36,9 @@ public final class TraceWriter {
     private static final String FLUSH_INTERVAL_PROPERTY = "threading.highlighter.flush.interval.minutes";
     private static final long DEFAULT_FLUSH_INTERVAL_MINUTES = 15;
 
-    // Optional throttle: minimum gap between full stack captures for the same marker.
-    // 0 (default) means no throttling, so data stays complete; a positive value trades
-    // completeness for a lighter hot path on very chatty projects (see CR-2).
+    // Optional throttle: the smallest gap between full stack captures for one marker.
+    // 0 (default) means no throttle, so all data is kept; a bigger value skips some
+    // captures to make the hot path lighter when a marker fires very often.
     private static final String MIN_CAPTURE_INTERVAL_PROPERTY = "threading.highlighter.min.capture.interval.millis";
     private static final long DEFAULT_MIN_CAPTURE_INTERVAL_MILLIS = 0;
 
@@ -54,7 +55,7 @@ public final class TraceWriter {
     private volatile boolean isShuttingDown = false;
 
     public TraceWriter() {
-        this.tracesDir = AgentConfig.getTracesPathFromSystemProperty();
+        this.tracesDir = ThreadingHighlighterConfig.getTracesPathFromSystemProperty();
 
         long flushIntervalMinutes = getFlushInterval();
         this.scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
@@ -107,10 +108,10 @@ public final class TraceWriter {
                 if (existing != null) {
                     // same location seen again: keep one record, only update the timestamp
                     traces.put(key, new TraceRecord(
-                            existing.className(),
-                            existing.methodName(),
-                            existing.fileName(),
-                            existing.lineNumber(),
+                            existing.getClassName(),
+                            existing.getMethodName(),
+                            existing.getFileName(),
+                            existing.getLineNumber(),
                             timestamp
                     ));
                 } else if (traces.size() < MAX_LOCATIONS_PER_MARKER) {
@@ -159,7 +160,7 @@ public final class TraceWriter {
         synchronized (markerBuffer) {
             drained.forEach((key, oldRecord) -> markerBuffer.merge(key, oldRecord,
                     (liveRecord, restoredRecord) ->
-                            liveRecord.lastSeenTimestampEpochMillis() >= restoredRecord.lastSeenTimestampEpochMillis()
+                            liveRecord.getLastSeenTimestampEpochMillis() >= restoredRecord.getLastSeenTimestampEpochMillis()
                                     ? liveRecord : restoredRecord));
             trimToLimit(markerBuffer);
         }
@@ -172,7 +173,7 @@ public final class TraceWriter {
             return;
         }
         markerBuffer.entrySet().stream()
-                .sorted(Comparator.comparingLong(e -> e.getValue().lastSeenTimestampEpochMillis()))
+                .sorted(Comparator.comparingLong(e -> e.getValue().getLastSeenTimestampEpochMillis()))
                 .limit(overflow)
                 .map(Map.Entry::getKey)
                 .toList()
@@ -227,14 +228,14 @@ public final class TraceWriter {
     // Returns false if the write fails, so the caller can keep the data for a retry.
     private boolean appendTracesToFile(String markerFqn, Map<String, TraceRecord> traces) {
         try {
-            String safeFileName = AgentConfig.getTraceFileName(markerFqn);
+            String safeFileName = ThreadingHighlighterConfig.getTraceFileName(markerFqn);
             Path markerFilePath = tracesDir.resolve(safeFileName);
             Files.createDirectories(tracesDir);
 
             try (BufferedWriter out = Files.newBufferedWriter(markerFilePath, StandardCharsets.UTF_8,
                     StandardOpenOption.CREATE, StandardOpenOption.APPEND)) {
                 for (TraceRecord record : traces.values()) {
-                    out.write(TraceLineCodec.encode(record));
+                    out.write(TraceJson.encode(record));
                     out.newLine();
                 }
             }

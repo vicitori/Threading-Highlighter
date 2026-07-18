@@ -9,11 +9,11 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Round-trips a {@link TraceRecord} through the shared {@link TraceJson} codec.
+ * Encodes a {@link TraceRecord} and reads it back with the shared {@link TraceJson}
+ * codec.
  *
- * <p>Since the split codec was unified into one shared class, both the agent (write)
- * and the plugin (read) call the same encode/decode, so this single test guards the
- * whole wire contract; the two sides can no longer drift (see CR-9 / CR-10).
+ * <p>The agent (write) and the plugin (read) call the same encode/decode, so this
+ * one test checks the whole format for both sides.
  */
 class TraceJsonRoundTripTest {
 

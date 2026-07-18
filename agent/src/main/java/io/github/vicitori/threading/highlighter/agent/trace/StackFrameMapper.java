@@ -1,12 +1,12 @@
 package io.github.vicitori.threading.highlighter.agent.trace;
 
-import io.github.vicitori.threading.highlighter.agent.common.TraceRecord;
+import io.github.vicitori.threading.highlighter.common.trace.TraceRecord;
 
 /**
- * Maps a captured JVM stack frame to the domain model {@link TraceRecord}.
+ * Turns a captured JVM stack frame into a {@link TraceRecord}.
  *
- * <p>This is the domain mapping step, kept separate from the wire format: turning a
- * {@link TraceRecord} into a line on disk is {@link TraceLineCodec}'s job.
+ * <p>This only builds the model. Writing a {@link TraceRecord} as a JSON line is
+ * the job of {@link io.github.vicitori.threading.highlighter.common.trace.TraceJson}.
  */
 public final class StackFrameMapper {
 
