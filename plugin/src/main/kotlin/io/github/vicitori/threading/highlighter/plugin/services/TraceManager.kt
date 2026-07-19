@@ -3,10 +3,12 @@ package io.github.vicitori.threading.highlighter.plugin.services
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.components.Service
+import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.components.service
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.text.StringUtil
 import io.github.vicitori.threading.highlighter.common.config.ThreadingHighlighterConfig
 import io.github.vicitori.threading.highlighter.common.marker.MarkerInfo
 import io.github.vicitori.threading.highlighter.common.marker.Markers
@@ -31,6 +33,7 @@ class TraceManager(private val project: Project) {
     private var snapshot: TraceSnapshot = TraceSnapshot.EMPTY
 
     companion object {
+        private val LOG = logger<TraceManager>()
         fun getInstance(project: Project): TraceManager = project.service()
     }
 
@@ -62,6 +65,7 @@ class TraceManager(private val project: Project) {
         val projectBasePath = project.basePath ?: return TraceSnapshot.EMPTY
         val tracesDir = ThreadingHighlighterConfig.findTracesPath(projectBasePath)
         if (!tracesDir.exists()) {
+            LOG.info("loadSnapshot: traces dir does not exist: $tracesDir")
             return TraceSnapshot.EMPTY
         }
 
@@ -69,6 +73,7 @@ class TraceManager(private val project: Project) {
         val userPackages = ReadAction.compute<List<String>, RuntimeException> {
             UserCodeFilter.getUserPackages(project)
         }
+        LOG.info("loadSnapshot: tracesDir=$tracesDir, userPackages=$userPackages")
 
         val dataByMarker = LinkedHashMap<String, MarkerTraceData>()
         for (marker in Markers.getAll()) {
@@ -77,10 +82,12 @@ class TraceManager(private val project: Project) {
                 continue
             }
             val traces = repository.readTraceFile(traceFile, userPackages)
+            LOG.info("loadSnapshot: marker=${marker.markerFqn()} kept ${traces.size} record(s)")
             if (traces.isNotEmpty()) {
                 dataByMarker[marker.markerFqn()] = MarkerTraceData(marker, traces)
             }
         }
+        LOG.info("loadSnapshot: total markers with data = ${dataByMarker.size}")
         return TraceSnapshot.of(dataByMarker)
     }
 
@@ -139,4 +146,38 @@ class TraceManager(private val project: Project) {
         }
         return byFile
     }
+
+    /**
+     * Same content as [buildDebugSummary] but as HTML: a per-file table that reads
+     * better than the monospaced text dump and does not break on long class names.
+     */
+    fun buildHtmlSummary(): String {
+        val currentSnapshot = snapshot
+        if (currentSnapshot.isEmpty) {
+            return "<html><body><p>No traces loaded.</p></body></html>"
+        }
+        val byFile = buildLocationSummary(currentSnapshot)
+        if (byFile.isEmpty()) {
+            return "<html><body><p>Traces loaded, but none of them have a source file and line.</p></body></html>"
+        }
+
+        return buildString {
+            append("<html><body>")
+            append("<h2>Threading Trace Summary</h2>")
+            append("<p>Markers: <b>${currentSnapshot.markerCount}</b> &nbsp; ")
+            append("Files with traces: <b>${byFile.size}</b></p>")
+            for (file in byFile.keys.sorted()) {
+                append("<h3>${esc(file)}</h3>")
+                append("<table cellpadding='3'>")
+                append("<tr><th align='left'>Line</th><th align='left'>Marker</th><th align='left'>Class</th></tr>")
+                for ((markerFqn, className, line) in byFile.getValue(file).sortedBy { it.third }) {
+                    append("<tr><td>$line</td><td>${esc(markerFqn)}</td><td>${esc(className)}</td></tr>")
+                }
+                append("</table>")
+            }
+            append("</body></html>")
+        }
+    }
+
+    private fun esc(s: String): String = StringUtil.escapeXmlEntities(s)
 }

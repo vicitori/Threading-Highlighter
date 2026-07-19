@@ -18,7 +18,7 @@ class ShowTraceSummaryAction : AnAction() {
 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
-        val summary = TraceManager.getInstance(project).buildDebugSummary()
-        TextInfoDialog(project, "Threading Trace Summary", summary).show()
+        val summary = TraceManager.getInstance(project).buildHtmlSummary()
+        TextInfoDialog(project, "Threading Trace Summary", summary, isHtml = true).show()
     }
 }
