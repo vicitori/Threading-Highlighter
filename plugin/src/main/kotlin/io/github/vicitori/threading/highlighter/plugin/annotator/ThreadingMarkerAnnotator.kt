@@ -7,16 +7,21 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.markup.GutterIconRenderer
-import com.intellij.openapi.project.Project
+import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.openapi.util.TextRange
+import com.intellij.openapi.util.text.StringUtil
 import com.intellij.psi.PsiElement
+import com.intellij.ui.components.JBScrollPane
+import com.intellij.util.ui.HTMLEditorKitBuilder
+import com.intellij.util.ui.JBUI
+import java.awt.Dimension
 import java.time.Instant
+import javax.swing.JEditorPane
 import io.github.vicitori.threading.highlighter.common.marker.MarkerInfo
 import io.github.vicitori.threading.highlighter.common.trace.TraceRecord
 import io.github.vicitori.threading.highlighter.plugin.icons.PluginIcons
 import io.github.vicitori.threading.highlighter.plugin.services.MarkerStateService
 import io.github.vicitori.threading.highlighter.plugin.services.TraceManager
-import io.github.vicitori.threading.highlighter.plugin.ui.TextInfoDialog
 
 /**
  * Draws a gutter icon on lines that the agent recorded as threading markers.
@@ -149,7 +154,7 @@ private class ThreadingGutterIconRenderer(
     private val stale: Boolean
 ) : GutterIconRenderer() {
     override fun getIcon() = PluginIcons.ThreadingMarker
-    override fun getTooltipText() = tooltipMessage
+    override fun getTooltipText() = buildTooltipHtml()
     // click opens a details popup rather than navigating to code
     override fun isNavigateAction() = true
     override fun getAlignment() = Alignment.LEFT
@@ -173,26 +178,62 @@ private class ThreadingGutterIconRenderer(
 
     override fun getClickAction(): AnAction = object : AnAction() {
         override fun actionPerformed(e: AnActionEvent) {
-            val project = e.project ?: return
-            TextInfoDialog(project, "Threading Marker Details", buildDetailsMessage()).show()
+            showDetailsPopup(e)
         }
     }
 
-    private fun buildDetailsMessage(): String = buildString {
-        appendLine("Threading Marker Detected")
-        appendLine("─".repeat(60))
-        appendLine("Location: $fileName:$lineNumber")
+    // A lightweight, non-modal popup near the click, so it can sit next to the code
+    // instead of a blocking dialog.
+    private fun showDetailsPopup(e: AnActionEvent) {
+        val pane = JEditorPane().apply {
+            editorKit = HTMLEditorKitBuilder().build()
+            text = buildDetailsHtml()
+            isEditable = false
+            caretPosition = 0
+        }
+        val scroll = JBScrollPane(pane).apply {
+            preferredSize = Dimension(JBUI.scale(480), JBUI.scale(260))
+        }
+        JBPopupFactory.getInstance()
+            .createComponentPopupBuilder(scroll, pane)
+            .setTitle("Threading Marker Details")
+            .setResizable(true)
+            .setMovable(true)
+            .setRequestFocus(true)
+            .createPopup()
+            .showInBestPositionFor(e.dataContext)
+    }
+
+    private fun buildTooltipHtml(): String = buildString {
+        append("<html><body>")
+        append("<b>Threading marker</b> — ${records.size} occurrence(s)")
         if (stale) {
-            appendLine("⚠ File was edited after this trace was recorded; the line number may be inaccurate.")
+            append("<br/><i>⚠ file edited after recording; line may be inaccurate</i>")
         }
-        appendLine()
-
-        for ((marker, trace) in records) {
-            appendLine("Marker: ${marker.displayName}")
-            appendLine("  Description: ${marker.description}")
-            appendLine("  Last seen: ${Instant.ofEpochMilli(trace.lastSeenTimestampEpochMillis)}")
-            appendLine("  Trace: ${trace.className}.${trace.methodName}")
-            appendLine()
+        for ((marker, _) in records.distinctBy { it.first.markerFqn() }) {
+            append("<br/>• ${esc(marker.displayName)}")
         }
+        append("<br/><small>Click for details</small>")
+        append("</body></html>")
     }
+
+    private fun buildDetailsHtml(): String = buildString {
+        append("<html><body>")
+        append("<h3>Threading Marker Detected</h3>")
+        append("<p>Location: <b>${esc(fileName)}:$lineNumber</b></p>")
+        if (stale) {
+            append("<p><i>⚠ File was edited after this trace was recorded; ")
+            append("the line number may be inaccurate.</i></p>")
+        }
+        for ((marker, trace) in records) {
+            append("<hr/>")
+            append("<p><b>${esc(marker.displayName)}</b><br/>")
+            append("${esc(marker.description)}<br/>")
+            append("Trace: ${esc(trace.className)}.${esc(trace.methodName)}<br/>")
+            append("<small>Last seen: ${Instant.ofEpochMilli(trace.lastSeenTimestampEpochMillis)}</small></p>")
+        }
+        append("</body></html>")
+    }
+
+    private fun esc(s: String): String = StringUtil.escapeXmlEntities(s)
 }
