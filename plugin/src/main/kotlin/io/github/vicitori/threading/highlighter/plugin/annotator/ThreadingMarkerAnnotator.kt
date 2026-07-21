@@ -17,11 +17,13 @@ import com.intellij.util.ui.JBUI
 import java.awt.Dimension
 import java.time.Instant
 import javax.swing.JEditorPane
+import javax.swing.event.HyperlinkEvent
 import io.github.vicitori.threading.highlighter.common.marker.MarkerInfo
 import io.github.vicitori.threading.highlighter.common.trace.TraceRecord
 import io.github.vicitori.threading.highlighter.plugin.icons.PluginIcons
 import io.github.vicitori.threading.highlighter.plugin.services.MarkerStateService
 import io.github.vicitori.threading.highlighter.plugin.services.TraceManager
+import io.github.vicitori.threading.highlighter.plugin.services.TraceNavigator
 
 /**
  * Draws a gutter icon on lines that the agent recorded as threading markers.
@@ -185,23 +187,33 @@ private class ThreadingGutterIconRenderer(
     // A lightweight, non-modal popup near the click, so it can sit next to the code
     // instead of a blocking dialog.
     private fun showDetailsPopup(e: AnActionEvent) {
+        val project = e.project
         val pane = JEditorPane().apply {
             editorKit = HTMLEditorKitBuilder().build()
             text = buildDetailsHtml()
             isEditable = false
             caretPosition = 0
         }
-        val scroll = JBScrollPane(pane).apply {
-            preferredSize = Dimension(JBUI.scale(480), JBUI.scale(260))
-        }
-        JBPopupFactory.getInstance()
-            .createComponentPopupBuilder(scroll, pane)
+        val popup = JBPopupFactory.getInstance()
+            .createComponentPopupBuilder(
+                JBScrollPane(pane).apply { preferredSize = Dimension(JBUI.scale(480), JBUI.scale(260)) },
+                pane
+            )
             .setTitle("Threading Marker Details")
             .setResizable(true)
             .setMovable(true)
             .setRequestFocus(true)
             .createPopup()
-            .showInBestPositionFor(e.dataContext)
+
+        // href is the record index; clicking a trace link jumps to that source line
+        pane.addHyperlinkListener { event ->
+            if (event.eventType != HyperlinkEvent.EventType.ACTIVATED || project == null) return@addHyperlinkListener
+            val index = event.description?.toIntOrNull() ?: return@addHyperlinkListener
+            records.getOrNull(index)?.let { (_, trace) ->
+                if (TraceNavigator.navigateTo(project, trace)) popup.cancel()
+            }
+        }
+        popup.showInBestPositionFor(e.dataContext)
     }
 
     private fun buildTooltipHtml(): String = buildString {
@@ -225,11 +237,12 @@ private class ThreadingGutterIconRenderer(
             append("<p><i>⚠ File was edited after this trace was recorded; ")
             append("the line number may be inaccurate.</i></p>")
         }
-        for ((marker, trace) in records) {
+        records.forEachIndexed { index, (marker, trace) ->
             append("<hr/>")
             append("<p><b>${esc(marker.displayName)}</b><br/>")
             append("${esc(marker.description)}<br/>")
-            append("Trace: ${esc(trace.className)}.${esc(trace.methodName)}<br/>")
+            // clickable trace: href carries the record index for the hyperlink listener
+            append("Trace: <a href=\"$index\">${esc(trace.className)}.${esc(trace.methodName)}</a><br/>")
             append("<small>Last seen: ${Instant.ofEpochMilli(trace.lastSeenTimestampEpochMillis)}</small></p>")
         }
         append("</body></html>")
