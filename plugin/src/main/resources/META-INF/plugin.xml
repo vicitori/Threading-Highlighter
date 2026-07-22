@@ -39,6 +39,9 @@
 
         <postStartupActivity
             implementation="io.github.vicitori.threading.highlighter.plugin.services.TraceFileWatcher"/>
+
+        <toolWindow id="Threading Traces" anchor="bottom"
+                    factoryClass="io.github.vicitori.threading.highlighter.plugin.toolwindow.TraceToolWindowFactory"/>
     </extensions>
 
     <actions>
