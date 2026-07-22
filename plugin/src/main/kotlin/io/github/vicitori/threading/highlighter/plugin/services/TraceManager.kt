@@ -32,6 +32,9 @@ class TraceManager(private val project: Project) {
     @Volatile
     private var snapshot: TraceSnapshot = TraceSnapshot.EMPTY
 
+    /** Latest published snapshot; safe to read from any thread (volatile). */
+    val currentSnapshot: TraceSnapshot get() = snapshot
+
     companion object {
         private val LOG = logger<TraceManager>()
         fun getInstance(project: Project): TraceManager = project.service()
@@ -53,6 +56,7 @@ class TraceManager(private val project: Project) {
 
             override fun onSuccess() {
                 DaemonCodeAnalyzer.getInstance(project).restart()
+                project.messageBus.syncPublisher(TraceUpdateListener.TOPIC).tracesUpdated()
                 onReloaded()
             }
         }.queue()
