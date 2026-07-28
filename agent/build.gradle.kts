@@ -27,11 +27,11 @@ tasks {
         useJUnitPlatform()
     }
 
-    // The agent ships only as the shaded fat jar (agent.jar). Give the thin jar a
-    // classifier so it does not write to the same agent.jar path as shadowJar, which
-    // otherwise makes consumers (e.g. the plugin sandbox) ambiguous about the producer.
+    // The agent ships only as the shaded fat jar (agent.jar). The plain jar task
+    // produces a thin jar nobody uses, so disable it: it avoids an unused artifact
+    // and the path clash with shadowJar (both default to agent.jar).
     jar {
-        archiveClassifier.set("thin")
+        enabled = false
     }
 
     shadowJar {
