@@ -61,6 +61,7 @@ class StackCaptureTest {
         return className.startsWith("java.")
                 || className.startsWith("jdk.")
                 || className.startsWith("com.intellij.")
-                || className.startsWith("io.github.vicitori.threading.highlighter.");
+                || className.startsWith("io.github.vicitori.threading.highlighter.agent.")
+                || className.startsWith("io.github.vicitori.threading.highlighter.common.");
     }
 }
