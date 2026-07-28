@@ -40,6 +40,11 @@ intellijPlatform {
         }
     }
 
+    // Skip building searchable options: it launches a headless IDE just to index
+    // settings UI, which this plugin has almost none of. Saves a slow build step and
+    // one extra jar; can be turned back on before publishing if needed.
+    buildSearchableOptions = false
+
     // Used by the CI `verify` job to check compatibility against target IDEs
     pluginVerification {
         ides {
