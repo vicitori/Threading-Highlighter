@@ -42,6 +42,9 @@
 
         <toolWindow id="Threading Traces" anchor="bottom"
                     factoryClass="io.github.vicitori.threading.highlighter.plugin.toolwindow.TraceToolWindowFactory"/>
+
+        <statusBarWidgetFactory id="ThreadingHighlighter.StatusBar"
+                                implementation="io.github.vicitori.threading.highlighter.plugin.statusbar.TraceStatusBarWidgetFactory"/>
     </extensions>
 
     <actions>
@@ -62,8 +65,8 @@
                     description="Show or hide all threading gutter markers without reloading traces"/>
             <action id="ThreadingHighlighter.CopyAgentArgs"
                     class="io.github.vicitori.threading.highlighter.plugin.actions.CopyAgentArgsAction"
-                    text="Copy Agent VM Options"
-                    description="Copy a ready-to-use -javaagent argument for the bundled agent to the clipboard"/>
+                    text="Enable Agent..."
+                    description="Show ready-to-use -javaagent VM options for the bundled agent with setup steps"/>
         </group>
     </actions>
 </idea-plugin>
