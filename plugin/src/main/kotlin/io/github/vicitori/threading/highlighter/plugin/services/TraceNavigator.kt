@@ -35,11 +35,9 @@ object TraceNavigator {
         if (candidates.size == 1) return candidates.first()
 
         // several files share the simple name: keep the one whose path matches the package
-        val packagePath = className.substringBefore('$')
-            .substringBeforeLast('.', missingDelimiterValue = "")
-            .replace('.', '/')
-        if (packagePath.isEmpty()) return candidates.first()
-        return candidates.firstOrNull { it.path.replace('\\', '/').contains("/$packagePath/") }
+        val packageName = PackagePathMatcher.packageOf(className)
+        if (packageName.isEmpty()) return candidates.first()
+        return candidates.firstOrNull { PackagePathMatcher.matches(it.path, packageName, fileName) }
             ?: candidates.first()
     }
 }
