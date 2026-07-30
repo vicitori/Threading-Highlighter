@@ -5,6 +5,7 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import io.github.vicitori.threading.highlighter.plugin.services.TraceManager
 import io.github.vicitori.threading.highlighter.plugin.ui.TextInfoDialog
+import io.github.vicitori.threading.highlighter.plugin.ui.TraceHtml
 
 class ShowTraceSummaryAction : AnAction() {
 
@@ -18,7 +19,8 @@ class ShowTraceSummaryAction : AnAction() {
 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
-        val summary = TraceManager.getInstance(project).buildHtmlSummary()
-        TextInfoDialog(project, "Threading Trace Summary", summary, isHtml = true).show()
+        val manager = TraceManager.getInstance(project)
+        val html = TraceHtml.summary(manager.buildSummary(), manager.buildDiagnostics())
+        TextInfoDialog(project, "Threading Trace Summary", html, isHtml = true).show()
     }
 }

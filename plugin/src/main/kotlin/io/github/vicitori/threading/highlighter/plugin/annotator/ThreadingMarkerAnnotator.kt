@@ -7,23 +7,16 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.markup.GutterIconRenderer
-import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.openapi.util.TextRange
-import com.intellij.openapi.util.text.StringUtil
 import com.intellij.psi.PsiElement
-import com.intellij.ui.components.JBScrollPane
-import com.intellij.util.ui.HTMLEditorKitBuilder
-import com.intellij.util.ui.JBUI
-import java.awt.Dimension
-import java.time.Instant
-import javax.swing.JEditorPane
-import javax.swing.event.HyperlinkEvent
 import io.github.vicitori.threading.highlighter.common.marker.MarkerInfo
 import io.github.vicitori.threading.highlighter.common.trace.TraceRecord
 import io.github.vicitori.threading.highlighter.plugin.icons.PluginIcons
 import io.github.vicitori.threading.highlighter.plugin.services.MarkerStateService
+import io.github.vicitori.threading.highlighter.plugin.services.PackagePathMatcher
 import io.github.vicitori.threading.highlighter.plugin.services.TraceManager
-import io.github.vicitori.threading.highlighter.plugin.services.TraceNavigator
+import io.github.vicitori.threading.highlighter.plugin.ui.MarkerDetailsPopup
+import io.github.vicitori.threading.highlighter.plugin.ui.TraceHtml
 
 /**
  * Draws a gutter icon on lines that the agent recorded as threading markers.
@@ -80,26 +73,7 @@ class ThreadingMarkerAnnotator : Annotator {
     private fun pathMatchesTrace(filePath: String?, trace: TraceRecord): Boolean {
         // path unknown (e.g. in-memory file): cannot disambiguate, keep the record
         if (filePath == null) return true
-
-        val normalizedPath = filePath.replace('\\', '/')
-        // nested/lambda classes use '$'; drop it before taking the package
-        val packageName = trace.className.substringBefore('$').substringBeforeLast('.', missingDelimiterValue = "")
-        val simpleFileName = trace.fileName
-
-        // no file name from the stack frame: fall back to matching the package segment
-        if (simpleFileName == null) {
-            if (packageName.isEmpty()) return true
-            return normalizedPath.contains("/${packageName.replace('.', '/')}/")
-        }
-
-        // require the path to end with "/<package>/<file>" (or just "/<file>" for the
-        // default package), so the package and file name must both line up
-        val anchor = if (packageName.isEmpty()) {
-            "/$simpleFileName"
-        } else {
-            "/${packageName.replace('.', '/')}/$simpleFileName"
-        }
-        return normalizedPath.endsWith(anchor)
+        return PackagePathMatcher.matches(filePath, PackagePathMatcher.packageOf(trace.className), trace.fileName)
     }
 
     private fun isFirstElementOnLine(
@@ -156,7 +130,7 @@ private class ThreadingGutterIconRenderer(
     private val stale: Boolean
 ) : GutterIconRenderer() {
     override fun getIcon() = PluginIcons.ThreadingMarker
-    override fun getTooltipText() = buildTooltipHtml()
+    override fun getTooltipText() = TraceHtml.tooltip(records, stale)
     // click opens a details popup rather than navigating to code
     override fun isNavigateAction() = true
     override fun getAlignment() = Alignment.LEFT
@@ -180,73 +154,7 @@ private class ThreadingGutterIconRenderer(
 
     override fun getClickAction(): AnAction = object : AnAction() {
         override fun actionPerformed(e: AnActionEvent) {
-            showDetailsPopup(e)
+            MarkerDetailsPopup.show(e, records, fileName, lineNumber, stale)
         }
     }
-
-    // A lightweight, non-modal popup near the click, so it can sit next to the code
-    // instead of a blocking dialog.
-    private fun showDetailsPopup(e: AnActionEvent) {
-        val project = e.project
-        val pane = JEditorPane().apply {
-            editorKit = HTMLEditorKitBuilder().build()
-            text = buildDetailsHtml()
-            isEditable = false
-            caretPosition = 0
-        }
-        val popup = JBPopupFactory.getInstance()
-            .createComponentPopupBuilder(
-                JBScrollPane(pane).apply { preferredSize = Dimension(JBUI.scale(480), JBUI.scale(260)) },
-                pane
-            )
-            .setTitle("Threading Marker Details")
-            .setResizable(true)
-            .setMovable(true)
-            .setRequestFocus(true)
-            .createPopup()
-
-        // href is the record index; clicking a trace link jumps to that source line
-        pane.addHyperlinkListener { event ->
-            if (event.eventType != HyperlinkEvent.EventType.ACTIVATED || project == null) return@addHyperlinkListener
-            val index = event.description?.toIntOrNull() ?: return@addHyperlinkListener
-            records.getOrNull(index)?.let { (_, trace) ->
-                if (TraceNavigator.navigateTo(project, trace)) popup.cancel()
-            }
-        }
-        popup.showInBestPositionFor(e.dataContext)
-    }
-
-    private fun buildTooltipHtml(): String = buildString {
-        append("<html><body>")
-        append("<b>Threading marker</b> — ${records.size} occurrence(s)")
-        if (stale) {
-            append("<br/><i>⚠ file edited after recording; line may be inaccurate</i>")
-        }
-        for ((marker, _) in records.distinctBy { it.first.markerFqn() }) {
-            append("<br/>• ${esc(marker.displayName)}")
-        }
-        append("<br/><small>Click for details</small>")
-        append("</body></html>")
-    }
-
-    private fun buildDetailsHtml(): String = buildString {
-        append("<html><body>")
-        append("<h3>Threading Marker Detected</h3>")
-        append("<p>Location: <b>${esc(fileName)}:$lineNumber</b></p>")
-        if (stale) {
-            append("<p><i>⚠ File was edited after this trace was recorded; ")
-            append("the line number may be inaccurate.</i></p>")
-        }
-        records.forEachIndexed { index, (marker, trace) ->
-            append("<hr/>")
-            append("<p><b>${esc(marker.displayName)}</b><br/>")
-            append("${esc(marker.description)}<br/>")
-            // clickable trace: href carries the record index for the hyperlink listener
-            append("Trace: <a href=\"$index\">${esc(trace.className)}.${esc(trace.methodName)}</a><br/>")
-            append("<small>Last seen: ${Instant.ofEpochMilli(trace.lastSeenTimestampEpochMillis)}</small></p>")
-        }
-        append("</body></html>")
-    }
-
-    private fun esc(s: String): String = StringUtil.escapeXmlEntities(s)
 }
