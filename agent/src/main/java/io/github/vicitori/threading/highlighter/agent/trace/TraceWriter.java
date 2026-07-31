@@ -6,7 +6,9 @@ import io.github.vicitori.threading.highlighter.common.trace.TraceJson;
 import io.github.vicitori.threading.highlighter.common.trace.TraceRecord;
 
 import java.io.BufferedWriter;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -42,6 +44,13 @@ public final class TraceWriter {
     private static final String MIN_CAPTURE_INTERVAL_PROPERTY = "threading.highlighter.min.capture.interval.millis";
     private static final long DEFAULT_MIN_CAPTURE_INTERVAL_MILLIS = 0;
 
+    // Each JVM run is a fresh session by default: old trace files are removed at
+    // startup so the plugin only sees the current code's markers. Set this property
+    // to true to instead keep and append to traces from earlier runs (useful for
+    // collecting a rare event over several runs, as long as the code does not change).
+    private static final String APPEND_SESSION_PROPERTY = "threading.highlighter.append.session";
+    private static final String TRACE_FILE_GLOB = "*.jsonl";
+
     // cap unique locations per marker so a permanently failing disk (records kept via
     // restoreFailed) cannot grow the buffer without bound; oldest entries are dropped
     private static final int MAX_LOCATIONS_PER_MARKER = 10_000;
@@ -56,6 +65,12 @@ public final class TraceWriter {
 
     public TraceWriter() {
         this.tracesDir = ThreadingHighlighterConfig.getTracesPathFromSystemProperty();
+
+        // fresh session by default: drop traces from previous runs so stale line
+        // numbers (after the code was edited) cannot leave gutter icons on wrong lines
+        if (!isAppendSession()) {
+            clearPreviousSession();
+        }
 
         long flushIntervalMinutes = getFlushInterval();
         this.scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
@@ -208,6 +223,39 @@ public final class TraceWriter {
             AgentLog.warn("Invalid min capture interval property: " + System.getProperty(MIN_CAPTURE_INTERVAL_PROPERTY));
         }
         return DEFAULT_MIN_CAPTURE_INTERVAL_MILLIS;
+    }
+
+    // true when the user opted in to keep traces from previous runs (append mode).
+    private boolean isAppendSession() {
+        return Boolean.getBoolean(APPEND_SESSION_PROPERTY);
+    }
+
+    // Removes trace files left by earlier runs so only the current session remains.
+    // Best-effort: any failure here is logged but must never crash the host JVM.
+    private void clearPreviousSession() {
+        try {
+            if (!Files.isDirectory(tracesDir)) {
+                return; // nothing written yet
+            }
+            int removed = 0;
+            try (DirectoryStream<Path> files = Files.newDirectoryStream(tracesDir, TRACE_FILE_GLOB)) {
+                for (Path file : files) {
+                    try {
+                        if (Files.deleteIfExists(file)) {
+                            removed++;
+                        }
+                    } catch (IOException e) {
+                        AgentLog.warn("Could not delete old trace file: " + file);
+                    }
+                }
+            }
+            if (removed > 0) {
+                AgentLog.info("Fresh session: removed " + removed + " trace file(s) from a previous run");
+            }
+        } catch (Throwable t) {
+            // never let cleanup break agent startup
+            AgentLog.warn("Failed to clear previous session traces: " + t.getMessage());
+        }
     }
 
     private long getFlushInterval() {
