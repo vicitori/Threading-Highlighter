@@ -152,9 +152,12 @@ private class ThreadingGutterIconRenderer(
         return result
     }
 
-    override fun getClickAction(): AnAction = object : AnAction() {
+    // cached: getClickAction() is polled repeatedly, so avoid allocating each call
+    private val clickAction = object : AnAction() {
         override fun actionPerformed(e: AnActionEvent) {
             MarkerDetailsPopup.show(e, records, fileName, lineNumber, stale)
         }
     }
+
+    override fun getClickAction(): AnAction = clickAction
 }

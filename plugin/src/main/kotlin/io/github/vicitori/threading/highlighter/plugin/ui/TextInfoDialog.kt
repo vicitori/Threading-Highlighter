@@ -34,7 +34,7 @@ class TextInfoDialog(
     override fun createCenterPanel(): JComponent {
         val view = if (isHtml) htmlPane() else textArea()
         return JBScrollPane(view).apply {
-            preferredSize = Dimension(JBUI.scale(700), JBUI.scale(450))
+            preferredSize = Dimension(JBUI.scale(WIDTH), JBUI.scale(HEIGHT))
         }
     }
 
@@ -55,4 +55,9 @@ class TextInfoDialog(
     }
 
     override fun createActions() = arrayOf(okAction)
+
+    private companion object {
+        const val WIDTH = 700
+        const val HEIGHT = 450
+    }
 }
