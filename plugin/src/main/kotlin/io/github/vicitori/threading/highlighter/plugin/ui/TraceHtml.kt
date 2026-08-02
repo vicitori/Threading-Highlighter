@@ -42,15 +42,20 @@ object TraceHtml {
     /** Gutter tooltip: compact summary of the markers on one line. */
     fun tooltip(records: List<Pair<MarkerInfo, TraceRecord>>, stale: Boolean): String {
         val body = HtmlBuilder()
-        body.append(HtmlChunk.tag("b").addText("Threading marker"))
-        body.append(HtmlChunk.text(" — ${records.size} occurrence(s)"))
+        body.append(HtmlChunk.tag("b").addText("Threading contracts hit here"))
         if (stale) {
-            body.br().append(HtmlChunk.tag("i").addText("\u26a0 file edited after recording; line may be inaccurate"))
+            body.br().append(HtmlChunk.tag("i").addText(
+                "\u26a0 file edited after recording — line may be inaccurate"
+            ))
         }
+        val markers = HtmlBuilder()
         records.distinctBy { it.first.markerFqn() }.forEach { (marker, _) ->
-            body.br().append(HtmlChunk.text("\u2022 ${marker.displayName}"))
+            markers.append(HtmlChunk.li().addText(marker.displayName))
         }
-        body.br().append(HtmlChunk.tag("small").addText("Click for details"))
+        body.append(HtmlChunk.ul().child(markers.toFragment()))
+        body.append(HtmlChunk.tag("small").child(
+            HtmlChunk.tag("i").addText("Click the icon for details and navigation")
+        ))
         return page(body)
     }
 
