@@ -97,11 +97,11 @@ class ThreadingMarkerAnnotator : Annotator {
         lineNumber: Int,
         stale: Boolean
     ) {
-        val staleSuffix = if (stale) " (file edited after recording, line may be inaccurate)" else ""
-        val message = "Threading marker detected: ${records.size} occurrence(s)$staleSuffix"
-        holder.newAnnotation(HighlightSeverity.INFORMATION, message)
+        // silent annotation: no code highlight or plain-text tooltip on the line —
+        // only the gutter icon, whose own getTooltipText() shows the rich HTML hover
+        holder.newSilentAnnotation(HighlightSeverity.INFORMATION)
             .range(element.textRange)
-            .gutterIconRenderer(createGutterIconRenderer(records, fileName, lineNumber, message, stale))
+            .gutterIconRenderer(createGutterIconRenderer(records, fileName, lineNumber, stale))
             .create()
     }
 
@@ -109,9 +109,8 @@ class ThreadingMarkerAnnotator : Annotator {
         records: List<Pair<MarkerInfo, TraceRecord>>,
         fileName: String,
         lineNumber: Int,
-        tooltipMessage: String,
         stale: Boolean
-    ): GutterIconRenderer = ThreadingGutterIconRenderer(records, fileName, lineNumber, tooltipMessage, stale)
+    ): GutterIconRenderer = ThreadingGutterIconRenderer(records, fileName, lineNumber, stale)
 }
 
 /**
@@ -126,7 +125,6 @@ private class ThreadingGutterIconRenderer(
     private val records: List<Pair<MarkerInfo, TraceRecord>>,
     private val fileName: String,
     private val lineNumber: Int,
-    private val tooltipMessage: String,
     private val stale: Boolean
 ) : GutterIconRenderer() {
     override fun getIcon() = PluginIcons.ThreadingMarker
