@@ -7,6 +7,8 @@ import io.github.vicitori.threading.highlighter.common.trace.TraceRecord
 import io.github.vicitori.threading.highlighter.plugin.models.TraceDiagnostics
 import io.github.vicitori.threading.highlighter.plugin.models.TraceSummary
 import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 /**
  * Single place that turns trace data into HTML for every view (summary dialog,
@@ -59,32 +61,35 @@ object TraceHtml {
         return page(body)
     }
 
+    private val LAST_SEEN_FORMAT: DateTimeFormatter =
+        DateTimeFormatter.ofPattern("d MMM yyyy, HH:mm:ss").withZone(ZoneId.systemDefault())
+
     /**
      * Details popup: each frame's trace is a link whose href is the record index, so
      * the caller's hyperlink listener can navigate to it.
      */
     fun details(records: List<Pair<MarkerInfo, TraceRecord>>, fileName: String, lineNumber: Int, stale: Boolean): String {
         val body = HtmlBuilder()
-        body.append(HtmlChunk.tag("h3").addText("Threading Marker Detected"))
-        body.append(HtmlChunk.tag("p").children(
-            HtmlChunk.text("Location: "), HtmlChunk.tag("b").addText("$fileName:$lineNumber")
+        body.append(HtmlChunk.tag("div").style("color:#808080").children(
+            HtmlChunk.text("$fileName:"), HtmlChunk.tag("b").addText(lineNumber.toString())
         ))
         if (stale) {
-            body.append(HtmlChunk.tag("p").child(HtmlChunk.tag("i").addText(
-                "\u26a0 File was edited after this trace was recorded; the line number may be inaccurate."
-            )))
+            body.append(HtmlChunk.tag("div").style("color:#C8783C;margin-top:4px").addText(
+                "\u26a0 File edited after recording — the line number may be inaccurate."
+            ))
         }
         records.forEachIndexed { index, (marker, trace) ->
-            body.append(HtmlChunk.hr())
-            val p = HtmlBuilder()
-            p.append(HtmlChunk.tag("b").addText(marker.displayName)).br()
-            p.append(HtmlChunk.text(marker.description)).br()
-            p.append(HtmlChunk.text("Trace: "))
-                .append(HtmlChunk.link(index.toString(), "${trace.className}.${trace.methodName}")).br()
-            p.append(HtmlChunk.tag("small").addText(
-                "Last seen: ${Instant.ofEpochMilli(trace.lastSeenTimestampEpochMillis)}"
+            val block = HtmlBuilder()
+            block.append(HtmlChunk.tag("b").addText(marker.displayName))
+            block.append(HtmlChunk.tag("div").style("margin-top:2px").addText(marker.description))
+            block.append(HtmlChunk.tag("div").style("margin-top:4px").children(
+                HtmlChunk.tag("span").style("color:#808080").addText("at "),
+                HtmlChunk.link(index.toString(), "${trace.className}.${trace.methodName}")
             ))
-            body.append(HtmlChunk.tag("p").child(p.toFragment()))
+            block.append(HtmlChunk.tag("div").style("color:#808080;margin-top:2px").addText(
+                "last seen " + LAST_SEEN_FORMAT.format(Instant.ofEpochMilli(trace.lastSeenTimestampEpochMillis))
+            ))
+            body.append(HtmlChunk.tag("div").style("margin-top:10px").child(block.toFragment()))
         }
         return page(body)
     }

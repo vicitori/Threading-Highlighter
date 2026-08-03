@@ -5,6 +5,7 @@ import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.util.ui.HTMLEditorKitBuilder
 import com.intellij.util.ui.JBUI
+import com.intellij.util.ui.UIUtil
 import io.github.vicitori.threading.highlighter.common.marker.MarkerInfo
 import io.github.vicitori.threading.highlighter.common.trace.TraceRecord
 import io.github.vicitori.threading.highlighter.plugin.services.TraceNavigator
@@ -17,8 +18,9 @@ import javax.swing.event.HyperlinkEvent
  * Trace frames are links: clicking one navigates to that source location.
  */
 object MarkerDetailsPopup {
-    private const val WIDTH = 480
-    private const val HEIGHT = 260
+    private const val WIDTH = 440
+    private const val HEIGHT = 240
+    private const val PAD = 12
 
     fun show(e: AnActionEvent, records: List<Pair<MarkerInfo, TraceRecord>>, fileName: String, lineNumber: Int, stale: Boolean) {
         val project = e.project
@@ -26,13 +28,18 @@ object MarkerDetailsPopup {
             editorKit = HTMLEditorKitBuilder().build()
             text = TraceHtml.details(records, fileName, lineNumber, stale)
             isEditable = false
+            background = UIUtil.getPanelBackground()
+            // breathing room so text does not stick to the popup edges
+            border = JBUI.Borders.empty(PAD)
             caretPosition = 0
         }
+        val scroll = JBScrollPane(pane).apply {
+            preferredSize = Dimension(JBUI.scale(WIDTH), JBUI.scale(HEIGHT))
+            border = JBUI.Borders.empty()
+            viewport.background = UIUtil.getPanelBackground()
+        }
         val popup = JBPopupFactory.getInstance()
-            .createComponentPopupBuilder(
-                JBScrollPane(pane).apply { preferredSize = Dimension(JBUI.scale(WIDTH), JBUI.scale(HEIGHT)) },
-                pane
-            )
+            .createComponentPopupBuilder(scroll, pane)
             .setTitle("Threading Marker Details")
             .setResizable(true)
             .setMovable(true)
