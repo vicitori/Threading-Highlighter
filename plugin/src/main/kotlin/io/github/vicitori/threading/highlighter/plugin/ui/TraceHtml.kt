@@ -22,21 +22,23 @@ object TraceHtml {
         if (summary.isEmpty) return emptySummary(diagnostics)
 
         val body = HtmlBuilder()
-        body.append(HtmlChunk.tag("h2").addText("Threading Trace Summary"))
-        body.append(
-            HtmlChunk.tag("p").children(
-                HtmlChunk.text("Markers: "), HtmlChunk.tag("b").addText(summary.markerCount.toString()),
-                HtmlChunk.text("   Files: "), HtmlChunk.tag("b").addText(summary.fileCount.toString())
-            )
-        )
+        body.append(HtmlChunk.tag("div").style("color:#808080").children(
+            HtmlChunk.tag("b").addText(summary.markerCount.toString()),
+            HtmlChunk.text(" markers in "),
+            HtmlChunk.tag("b").addText(summary.fileCount.toString()),
+            HtmlChunk.text(" file(s)")
+        ))
         for ((file, entries) in summary.byFile) {
-            body.append(HtmlChunk.tag("h3").addText(file))
+            body.append(HtmlChunk.tag("div").style("margin-top:12px").child(HtmlChunk.tag("b").addText(file)))
             val rows = HtmlBuilder()
             rows.append(row("Line", "Marker", "Class", header = true))
             for (entry in entries) {
                 rows.append(row(entry.line.toString(), entry.marker.displayName, entry.trace.className))
             }
-            body.append(HtmlChunk.tag("table").attr("cellpadding", "3").child(rows.toFragment()))
+            body.append(HtmlChunk.tag("table")
+                .attr("cellspacing", "0").attr("cellpadding", "4").attr("width", "100%")
+                .style("margin-top:4px")
+                .child(rows.toFragment()))
         }
         return page(body)
     }
@@ -110,10 +112,11 @@ object TraceHtml {
 
     private fun row(line: String, marker: String, cls: String, header: Boolean = false): HtmlChunk {
         val cell = if (header) "th" else "td"
+        val clsStyle = if (header) "text-align:left" else "text-align:left;color:#808080"
         return HtmlChunk.tag("tr").children(
-            HtmlChunk.tag(cell).attr("align", "left").addText(line),
-            HtmlChunk.tag(cell).attr("align", "left").addText(marker),
-            HtmlChunk.tag(cell).attr("align", "left").addText(cls)
+            HtmlChunk.tag(cell).style("text-align:left;width:44px").addText(line),
+            HtmlChunk.tag(cell).style("text-align:left").addText(marker),
+            HtmlChunk.tag(cell).style(clsStyle).addText(cls)
         )
     }
 
