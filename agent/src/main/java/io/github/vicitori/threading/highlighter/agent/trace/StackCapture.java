@@ -32,9 +32,9 @@ final class StackCapture {
             "com.sun.",
             "kotlin.",
             "com.intellij.",
-            // the agent's own code and shared model; note we do NOT exclude the whole
-            // "io.github.vicitori.threading.highlighter." prefix, or user code such as
-            // the examples module (…threading.highlighter.examples) would be dropped too
+            // the agent's own code and shared model. Note: exclude only these exact
+            // subpackages, not the whole "io.github.vicitori.threading.highlighter."
+            // prefix, otherwise user code sharing that prefix would be dropped too.
             "io.github.vicitori.threading.highlighter.agent.",
             "io.github.vicitori.threading.highlighter.common.",
             "io.github.vicitori.shaded.", // Byte Buddy, relocated into the agent jar

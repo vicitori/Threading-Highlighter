@@ -1,4 +1,4 @@
-package io.github.vicitori.threading.highlighter.examples
+package com.example.threadingdemo
 
 import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType

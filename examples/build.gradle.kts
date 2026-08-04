@@ -3,7 +3,7 @@ plugins {
     id("org.jetbrains.intellij.platform")
 }
 
-group = "io.github.vicitori.threading.highlighter.examples"
+group = "com.example.threadingdemo"
 version = "0.0.1"
 
 kotlin {

@@ -1,10 +1,12 @@
 <idea-plugin>
-    <id>io.github.vicitori.threading.highlighter.examples</id>
-    <name>Highlighter Examples</name>
-    <vendor>Vicitori</vendor>
+    <id>com.example.threadingdemo</id>
+    <name>Threading Demo</name>
+    <vendor>Example</vendor>
 
     <description><![CDATA[
-    The set of examples demonstrating typical threading bugs in IntelliJ plugins.
+    A set of demo actions that reproduce typical threading markers in IntelliJ plugins.
+    Used to smoke-test Threading Highlighter. Its package is intentionally neutral
+    (com.example.threadingdemo), so the agent's framework filter never drops its frames.
     ]]></description>
 
     <idea-version since-build="253" until-build="253.*"/>
@@ -16,30 +18,30 @@
     </extensions>
 
     <actions>
-        <group id="io.github.vicitori.threading.highlighter.examples.MainGroup" text="Threading Marker Examples" popup="true">
-            <action id="io.github.vicitori.threading.highlighter.examples.SlowOperationOnEdtAction"
-                    class="io.github.vicitori.threading.highlighter.examples.SlowOperationOnEdtAction"
+        <group id="com.example.threadingdemo.MainGroup" text="Threading Marker Examples" popup="true">
+            <action id="com.example.threadingdemo.SlowOperationOnEdtAction"
+                    class="com.example.threadingdemo.SlowOperationOnEdtAction"
                     text="All Markers (Combined Example)"
                     description="Demonstrates all three threading markers: SLOW_OPERATION, EDT, and NON_EDT">
                 <keyboard-shortcut keymap="$default" first-keystroke="shift X"/>
             </action>
 
-            <action id="io.github.vicitori.threading.highlighter.examples.EdtMarkerAction"
-                    class="io.github.vicitori.threading.highlighter.examples.EdtMarkerAction"
+            <action id="com.example.threadingdemo.EdtMarkerAction"
+                    class="com.example.threadingdemo.EdtMarkerAction"
                     text="EDT Marker Only"
                     description="Demonstrates assertIsDispatchThread() marker">
                 <keyboard-shortcut keymap="$default" first-keystroke="shift E"/>
             </action>
 
-            <action id="io.github.vicitori.threading.highlighter.examples.NonEdtMarkerAction"
-                    class="io.github.vicitori.threading.highlighter.examples.NonEdtMarkerAction"
+            <action id="com.example.threadingdemo.NonEdtMarkerAction"
+                    class="com.example.threadingdemo.NonEdtMarkerAction"
                     text="Non-EDT Marker Only"
                     description="Demonstrates assertIsNonDispatchThread() marker">
                 <keyboard-shortcut keymap="$default" first-keystroke="shift N"/>
             </action>
 
-            <action id="io.github.vicitori.threading.highlighter.examples.ChainedMarkersAction"
-                    class="io.github.vicitori.threading.highlighter.examples.ChainedMarkersAction"
+            <action id="com.example.threadingdemo.ChainedMarkersAction"
+                    class="com.example.threadingdemo.ChainedMarkersAction"
                     text="Chained Markers Example"
                     description="Demonstrates chain of calls with multiple threading markers">
                 <keyboard-shortcut keymap="$default" first-keystroke="shift Y"/>
