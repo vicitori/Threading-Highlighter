@@ -6,6 +6,7 @@ import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.util.ui.HTMLEditorKitBuilder
 import com.intellij.util.ui.JBUI
+import com.intellij.util.ui.UIUtil
 import java.awt.Dimension
 import java.awt.Font
 import javax.swing.JComponent
@@ -35,6 +36,8 @@ class TextInfoDialog(
         val view = if (isHtml) htmlPane() else textArea()
         return JBScrollPane(view).apply {
             preferredSize = Dimension(JBUI.scale(WIDTH), JBUI.scale(HEIGHT))
+            border = JBUI.Borders.empty()
+            viewport.background = UIUtil.getPanelBackground()
         }
     }
 
@@ -42,6 +45,9 @@ class TextInfoDialog(
         editorKit = HTMLEditorKitBuilder().build()
         text = content
         isEditable = false
+        background = UIUtil.getPanelBackground()
+        // breathing room so text does not stick to the dialog edges
+        border = JBUI.Borders.empty(PAD)
         caretPosition = 0
     }
 
@@ -59,5 +65,6 @@ class TextInfoDialog(
     private companion object {
         const val WIDTH = 700
         const val HEIGHT = 450
+        const val PAD = 12
     }
 }
