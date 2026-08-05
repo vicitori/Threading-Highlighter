@@ -81,13 +81,20 @@ object TraceHtml {
             ))
         }
         records.forEachIndexed { index, (marker, trace) ->
+            val simpleClass = trace.className.substringAfterLast('.')
+            val packageName = trace.className.substringBeforeLast('.', missingDelimiterValue = "")
             val block = HtmlBuilder()
             block.append(HtmlChunk.tag("b").addText(marker.displayName))
             block.append(HtmlChunk.tag("div").style("margin-top:2px").addText(marker.description))
+            // short, clickable "Class.method"; the full package goes below in grey so a
+            // long FQN never overflows the popup width
             block.append(HtmlChunk.tag("div").style("margin-top:4px").children(
                 HtmlChunk.tag("span").style("color:#808080").addText("at "),
-                HtmlChunk.link(index.toString(), "${trace.className}.${trace.methodName}")
+                HtmlChunk.link(index.toString(), "$simpleClass.${trace.methodName}")
             ))
+            if (packageName.isNotEmpty()) {
+                block.append(HtmlChunk.tag("div").style("color:#808080;font-size:90%").addText(packageName))
+            }
             block.append(HtmlChunk.tag("div").style("color:#808080;margin-top:2px").addText(
                 "last seen " + LAST_SEEN_FORMAT.format(Instant.ofEpochMilli(trace.lastSeenTimestampEpochMillis))
             ))

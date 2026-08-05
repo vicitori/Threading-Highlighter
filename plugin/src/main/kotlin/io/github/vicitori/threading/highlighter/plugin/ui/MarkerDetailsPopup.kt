@@ -18,8 +18,8 @@ import javax.swing.event.HyperlinkEvent
  * Trace frames are links: clicking one navigates to that source location.
  */
 object MarkerDetailsPopup {
-    private const val WIDTH = 440
-    private const val HEIGHT = 240
+    private const val WIDTH = 380
+    private const val HEIGHT = 200
     private const val PAD = 12
 
     fun show(e: AnActionEvent, records: List<Pair<MarkerInfo, TraceRecord>>, fileName: String, lineNumber: Int, stale: Boolean) {
