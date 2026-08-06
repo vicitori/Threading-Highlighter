@@ -31,6 +31,7 @@ final class StackCapture {
             "sun.",
             "com.sun.",
             "kotlin.",
+            "kotlinx.", // coroutines/serialization/io internals: machinery, not user code
             "com.intellij.",
             // the agent's own code and shared model. Note: exclude only these exact
             // subpackages, not the whole "io.github.vicitori.threading.highlighter."
