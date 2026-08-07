@@ -15,13 +15,7 @@ private val LOG = logger<UserCodeFilter>()
  * [isUserCode] returns true for every frame (show all, hide nothing).
  */
 object UserCodeFilter {
-    fun getUserPackages(project: Project): List<String> {
-        val detectedPackages = detectUserPackages(project)
-        if (detectedPackages.isNotEmpty()) {
-            return detectedPackages
-        }
-        return emptyList()
-    }
+    fun getUserPackages(project: Project): List<String> = detectUserPackages(project)
 
     private fun detectUserPackages(project: Project): List<String> {
         val packages = mutableSetOf<String>()
@@ -44,8 +38,7 @@ object UserCodeFilter {
                     }
                 }
             }
-            val sorted = packages.sorted()
-            return sorted
+            return packages.sorted()
         } catch (e: ProcessCanceledException) {
             throw e // platform cancellation must never be swallowed
         } catch (e: Exception) {
