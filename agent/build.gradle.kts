@@ -14,7 +14,7 @@ dependencies {
     implementation("net.bytebuddy:byte-buddy-agent:1.15.11")
 
     // Shared pure-Java model/codec/config. common has no Kotlin runtime, so depending
-    // on it does not break the agent's classpath isolation from the host IDE (A1).
+    // on it keeps the agent's classpath isolated from the host IDE.
     implementation(project(":common"))
 
     testImplementation(platform("org.junit:junit-bom:5.11.3"))

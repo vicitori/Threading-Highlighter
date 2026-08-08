@@ -13,8 +13,7 @@ class ShowTraceSummaryAction : AnAction() {
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
 
     override fun update(e: AnActionEvent) {
-        val hasProject = e.project != null
-        e.presentation.isEnabledAndVisible = hasProject
+        e.presentation.isEnabledAndVisible = e.project != null
     }
 
     override fun actionPerformed(e: AnActionEvent) {
