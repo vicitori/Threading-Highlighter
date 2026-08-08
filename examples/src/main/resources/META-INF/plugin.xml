@@ -21,30 +21,30 @@
         <group id="com.example.threadingdemo.MainGroup" text="Threading Marker Examples" popup="true">
             <action id="com.example.threadingdemo.SlowOperationOnEdtAction"
                     class="com.example.threadingdemo.SlowOperationOnEdtAction"
-                    text="All Markers (Combined Example)"
-                    description="Demonstrates all three threading markers: SLOW_OPERATION, EDT, and NON_EDT">
-                <keyboard-shortcut keymap="$default" first-keystroke="shift X"/>
+                    text="Slow Operation Marker Only"
+                    description="Demonstrates the assertSlowOperationsAreAllowed() marker">
+                <keyboard-shortcut keymap="$default" first-keystroke="control alt shift S"/>
             </action>
 
             <action id="com.example.threadingdemo.EdtMarkerAction"
                     class="com.example.threadingdemo.EdtMarkerAction"
                     text="EDT Marker Only"
-                    description="Demonstrates assertIsDispatchThread() marker">
-                <keyboard-shortcut keymap="$default" first-keystroke="shift E"/>
+                    description="Demonstrates the assertIsDispatchThread() marker">
+                <keyboard-shortcut keymap="$default" first-keystroke="control alt shift E"/>
             </action>
 
             <action id="com.example.threadingdemo.NonEdtMarkerAction"
                     class="com.example.threadingdemo.NonEdtMarkerAction"
                     text="Non-EDT Marker Only"
-                    description="Demonstrates assertIsNonDispatchThread() marker">
-                <keyboard-shortcut keymap="$default" first-keystroke="shift N"/>
+                    description="Demonstrates the assertIsNonDispatchThread() marker">
+                <keyboard-shortcut keymap="$default" first-keystroke="control alt shift N"/>
             </action>
 
             <action id="com.example.threadingdemo.ChainedMarkersAction"
                     class="com.example.threadingdemo.ChainedMarkersAction"
-                    text="Chained Markers Example"
-                    description="Demonstrates chain of calls with multiple threading markers">
-                <keyboard-shortcut keymap="$default" first-keystroke="shift Y"/>
+                    text="All Markers (Chained Example)"
+                    description="Demonstrates all three threading markers across a chain of calls: EDT, Non-EDT, and Slow Operation">
+                <keyboard-shortcut keymap="$default" first-keystroke="control alt shift Y"/>
             </action>
         </group>
     </actions>

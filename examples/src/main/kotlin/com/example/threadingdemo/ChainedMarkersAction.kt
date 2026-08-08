@@ -7,7 +7,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 
-class ChainedMarkersAction : AnAction("Chained Markers Example") {
+class ChainedMarkersAction : AnAction("All Markers (Chained Example)") {
 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
