@@ -10,7 +10,7 @@ import io.github.vicitori.threading.highlighter.common.trace.TraceRecord
 data class TraceEntry(
     val line: Int,
     val marker: MarkerInfo,
-    val trace: TraceRecord
+    val trace: TraceRecord,
 )
 
 /**
@@ -19,7 +19,7 @@ data class TraceEntry(
  */
 data class TraceSummary(
     val markerCount: Int,
-    val byFile: Map<String, List<TraceEntry>>
+    val byFile: Map<String, List<TraceEntry>>,
 ) {
     val isEmpty: Boolean get() = byFile.isEmpty()
     val fileCount: Int get() = byFile.size
@@ -32,5 +32,5 @@ data class TraceDiagnostics(
     val projectName: String,
     val projectPath: String,
     val tracesDir: String?,
-    val tracesDirExists: Boolean
+    val tracesDirExists: Boolean,
 )

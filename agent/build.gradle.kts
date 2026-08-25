@@ -47,8 +47,8 @@ tasks {
                     "Premain-Class" to "io.github.vicitori.threading.highlighter.agent.ThreadingHighlighterAgent",
                     "Agent-Class" to "io.github.vicitori.threading.highlighter.agent.ThreadingHighlighterAgent",
                     "Can-Redefine-Classes" to "true",
-                    "Can-Retransform-Classes" to "true"
-                )
+                    "Can-Retransform-Classes" to "true",
+                ),
             )
         }
     }

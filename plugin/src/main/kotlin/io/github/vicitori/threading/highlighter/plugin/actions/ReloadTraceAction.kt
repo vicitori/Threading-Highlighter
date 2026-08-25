@@ -8,7 +8,6 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import io.github.vicitori.threading.highlighter.plugin.services.TraceManager
 
 class ReloadTraceAction : AnAction() {
-
     // update() only reads e.project, so it is safe to compute off the EDT
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
 
@@ -23,9 +22,14 @@ class ReloadTraceAction : AnAction() {
         // notify the user only once the new snapshot is actually published
         TraceManager.getInstance(project).reloadTraces {
             val message = "Use Tools | Threading Highlighter | Show Trace Summary for details."
-            NotificationGroupManager.getInstance().getNotificationGroup("Threading Highlighter").createNotification(
-                "Threading traces reloaded", message, NotificationType.INFORMATION
-            ).notify(project)
+            NotificationGroupManager
+                .getInstance()
+                .getNotificationGroup("Threading Highlighter")
+                .createNotification(
+                    "Threading traces reloaded",
+                    message,
+                    NotificationType.INFORMATION,
+                ).notify(project)
         }
     }
 }

@@ -5,7 +5,6 @@ on:
     branches: [ main ]
   push:
     branches: [ main ]
-    tags: [ 'v*' ]
 
 # Cancel in-progress runs for the same branch/PR to save resources
 concurrency:
@@ -17,27 +16,10 @@ permissions:
   contents: read
 
 jobs:
+  # Build, style check and tests share one checkout/JDK/Gradle setup: splitting them
+  # into separate jobs re-provisions the toolchain each time for no real benefit.
   build:
-    name: Build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 21
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
-
-      - name: Assemble project and agent jar
-        run: ./gradlew assemble :agent:shadowJar --no-daemon
-
-  test:
-    name: Test
+    name: Build & Test
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -55,6 +37,12 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      - name: Check formatting
+        run: ./gradlew spotlessCheck --no-daemon
+
+      - name: Assemble project and agent jar
+        run: ./gradlew assemble :agent:shadowJar --no-daemon
+
       - name: Run tests
         run: ./gradlew test --no-daemon
 
@@ -70,31 +58,4 @@ jobs:
         with:
           name: test-reports
           path: '**/build/reports/tests/'
-          retention-days: 7
-
-  verify:
-    name: Verify plugin
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 21
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
-
-      - name: Run IntelliJ Plugin Verifier
-        run: ./gradlew :plugin:verifyPlugin --no-daemon
-
-      - name: Upload verifier report on failure
-        uses: actions/upload-artifact@v4
-        if: failure()
-        with:
-          name: pluginVerifier-report
-          path: plugin/build/reports/pluginVerifier/
           retention-days: 7

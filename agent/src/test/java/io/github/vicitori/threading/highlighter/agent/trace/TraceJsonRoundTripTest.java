@@ -1,12 +1,12 @@
 package io.github.vicitori.threading.highlighter.agent.trace;
 
-import io.github.vicitori.threading.highlighter.common.trace.TraceJson;
-import io.github.vicitori.threading.highlighter.common.trace.TraceRecord;
-import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import io.github.vicitori.threading.highlighter.common.trace.TraceJson;
+import io.github.vicitori.threading.highlighter.common.trace.TraceRecord;
+import org.junit.jupiter.api.Test;
 
 /**
  * Encodes a {@link TraceRecord} and reads it back with the shared {@link TraceJson}

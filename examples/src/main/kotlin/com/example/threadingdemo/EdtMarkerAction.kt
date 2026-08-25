@@ -8,7 +8,6 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 
 class EdtMarkerAction : AnAction("EDT Marker Only") {
-
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
         val application = ApplicationManager.getApplication()
@@ -17,7 +16,8 @@ class EdtMarkerAction : AnAction("EDT Marker Only") {
     }
 
     private fun showNotification(project: Project) {
-        NotificationGroupManager.getInstance()
+        NotificationGroupManager
+            .getInstance()
             .getNotificationGroup("Threading Highlighter")
             .createNotification("EDT assertion passed - running on Event Dispatch Thread", NotificationType.INFORMATION)
             .notify(project)

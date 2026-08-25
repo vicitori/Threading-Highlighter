@@ -4,7 +4,6 @@ import io.github.vicitori.threading.highlighter.agent.common.AgentLog;
 import io.github.vicitori.threading.highlighter.common.config.ThreadingHighlighterConfig;
 import io.github.vicitori.threading.highlighter.common.trace.TraceJson;
 import io.github.vicitori.threading.highlighter.common.trace.TraceRecord;
-
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -79,28 +78,26 @@ public final class TraceWriter {
             return t;
         });
 
-        scheduler.scheduleAtFixedRate(
-                this::flushAllOnce,
-                flushIntervalMinutes,
-                flushIntervalMinutes,
-                TimeUnit.MINUTES
-        );
+        scheduler.scheduleAtFixedRate(this::flushAllOnce, flushIntervalMinutes, flushIntervalMinutes, TimeUnit.MINUTES);
 
         AgentLog.info("Periodic flush enabled: every " + flushIntervalMinutes + " minutes");
 
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            isShuttingDown = true;
-            scheduler.shutdown();
-            try {
-                if (!scheduler.awaitTermination(5, TimeUnit.SECONDS)) {
-                    scheduler.shutdownNow();
-                }
-            } catch (InterruptedException e) {
-                scheduler.shutdownNow();
-                Thread.currentThread().interrupt();
-            }
-            flushAllOnce();
-        }, "ThreadingHighlighter-Shutdown"));
+        Runtime.getRuntime()
+                .addShutdownHook(new Thread(
+                        () -> {
+                            isShuttingDown = true;
+                            scheduler.shutdown();
+                            try {
+                                if (!scheduler.awaitTermination(5, TimeUnit.SECONDS)) {
+                                    scheduler.shutdownNow();
+                                }
+                            } catch (InterruptedException e) {
+                                scheduler.shutdownNow();
+                                Thread.currentThread().interrupt();
+                            }
+                            flushAllOnce();
+                        },
+                        "ThreadingHighlighter-Shutdown"));
     }
 
     public void record(String markerFqn) {
@@ -122,13 +119,14 @@ public final class TraceWriter {
                 TraceRecord existing = traces.get(key);
                 if (existing != null) {
                     // same location seen again: keep one record, only update the timestamp
-                    traces.put(key, new TraceRecord(
-                            existing.getClassName(),
-                            existing.getMethodName(),
-                            existing.getFileName(),
-                            existing.getLineNumber(),
-                            timestamp
-                    ));
+                    traces.put(
+                            key,
+                            new TraceRecord(
+                                    existing.getClassName(),
+                                    existing.getMethodName(),
+                                    existing.getFileName(),
+                                    existing.getLineNumber(),
+                                    timestamp));
                 } else if (traces.size() < MAX_LOCATIONS_PER_MARKER) {
                     traces.put(key, record);
                 }
@@ -173,10 +171,13 @@ public final class TraceWriter {
     // (newest timestamp wins) so records added during the failed I/O are not lost.
     private void restoreFailed(Map<String, TraceRecord> markerBuffer, Map<String, TraceRecord> drained) {
         synchronized (markerBuffer) {
-            drained.forEach((key, oldRecord) -> markerBuffer.merge(key, oldRecord,
-                    (liveRecord, restoredRecord) ->
-                            liveRecord.getLastSeenTimestampEpochMillis() >= restoredRecord.getLastSeenTimestampEpochMillis()
-                                    ? liveRecord : restoredRecord));
+            drained.forEach((key, oldRecord) -> markerBuffer.merge(
+                    key,
+                    oldRecord,
+                    (liveRecord, restoredRecord) -> liveRecord.getLastSeenTimestampEpochMillis()
+                                    >= restoredRecord.getLastSeenTimestampEpochMillis()
+                            ? liveRecord
+                            : restoredRecord));
             trimToLimit(markerBuffer);
         }
     }
@@ -193,8 +194,8 @@ public final class TraceWriter {
                 .map(Map.Entry::getKey)
                 .toList()
                 .forEach(markerBuffer::remove);
-        AgentLog.warn("Trace buffer for a marker exceeded " + MAX_LOCATIONS_PER_MARKER
-                + " locations; dropped " + overflow + " oldest (disk write failing?)");
+        AgentLog.warn("Trace buffer for a marker exceeded " + MAX_LOCATIONS_PER_MARKER + " locations; dropped "
+                + overflow + " oldest (disk write failing?)");
     }
 
     // Returns true if this marker was captured too recently and should be skipped.
@@ -220,7 +221,8 @@ public final class TraceWriter {
                 }
             }
         } catch (NumberFormatException e) {
-            AgentLog.warn("Invalid min capture interval property: " + System.getProperty(MIN_CAPTURE_INTERVAL_PROPERTY));
+            AgentLog.warn(
+                    "Invalid min capture interval property: " + System.getProperty(MIN_CAPTURE_INTERVAL_PROPERTY));
         }
         return DEFAULT_MIN_CAPTURE_INTERVAL_MILLIS;
     }
@@ -280,8 +282,8 @@ public final class TraceWriter {
             Path markerFilePath = tracesDir.resolve(safeFileName);
             Files.createDirectories(tracesDir);
 
-            try (BufferedWriter out = Files.newBufferedWriter(markerFilePath, StandardCharsets.UTF_8,
-                    StandardOpenOption.CREATE, StandardOpenOption.APPEND)) {
+            try (BufferedWriter out = Files.newBufferedWriter(
+                    markerFilePath, StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.APPEND)) {
                 for (TraceRecord record : traces.values()) {
                     out.write(TraceJson.encode(record));
                     out.newLine();

@@ -25,7 +25,10 @@ import io.github.vicitori.threading.highlighter.plugin.ui.TraceHtml
  * only leaf elements are handled, and only the first element on the line draws.
  */
 class ThreadingMarkerAnnotator : Annotator {
-    override fun annotate(element: PsiElement, holder: AnnotationHolder) {
+    override fun annotate(
+        element: PsiElement,
+        holder: AnnotationHolder,
+    ) {
         if (!shouldAnnotate(element)) return
 
         val containingFile = element.containingFile ?: return
@@ -58,19 +61,24 @@ class ThreadingMarkerAnnotator : Annotator {
     private fun getMarkerRecords(
         element: PsiElement,
         fileName: String,
-        lineNumber: Int
+        lineNumber: Int,
     ): List<Pair<MarkerInfo, TraceRecord>>? {
         val traceManager = TraceManager.getInstance(element.project)
         val filePath = element.containingFile?.virtualFile?.path
-        val records = traceManager.getRecordsForLocation(fileName, lineNumber)
-            // StackTraceElement.fileName is a simple name, so files with the same name
-            // in different packages would collide: keep only records whose class package
-            // AND file name anchor the end of this file's path
-            .filter { (_, trace) -> pathMatchesTrace(filePath, trace) }
+        val records =
+            traceManager
+                .getRecordsForLocation(fileName, lineNumber)
+                // StackTraceElement.fileName is a simple name, so files with the same name
+                // in different packages would collide: keep only records whose class package
+                // AND file name anchor the end of this file's path
+                .filter { (_, trace) -> pathMatchesTrace(filePath, trace) }
         return records.ifEmpty { null }
     }
 
-    private fun pathMatchesTrace(filePath: String?, trace: TraceRecord): Boolean {
+    private fun pathMatchesTrace(
+        filePath: String?,
+        trace: TraceRecord,
+    ): Boolean {
         // path unknown (e.g. in-memory file): cannot disambiguate, keep the record
         if (filePath == null) return true
         return PackagePathMatcher.matches(filePath, PackagePathMatcher.packageOf(trace.className), trace.fileName)
@@ -79,7 +87,7 @@ class ThreadingMarkerAnnotator : Annotator {
     private fun isFirstElementOnLine(
         element: PsiElement,
         document: Document,
-        lineNumber: Int
+        lineNumber: Int,
     ): Boolean {
         val lineStartOffset = document.getLineStartOffset(lineNumber - 1)
         val lineEndOffset = document.getLineEndOffset(lineNumber - 1)
@@ -95,11 +103,12 @@ class ThreadingMarkerAnnotator : Annotator {
         records: List<Pair<MarkerInfo, TraceRecord>>,
         fileName: String,
         lineNumber: Int,
-        stale: Boolean
+        stale: Boolean,
     ) {
         // silent annotation: no code highlight or plain-text tooltip on the line —
         // only the gutter icon, whose own getTooltipText() shows the rich HTML hover
-        holder.newSilentAnnotation(HighlightSeverity.INFORMATION)
+        holder
+            .newSilentAnnotation(HighlightSeverity.INFORMATION)
             .range(element.textRange)
             .gutterIconRenderer(createGutterIconRenderer(records, fileName, lineNumber, stale))
             .create()
@@ -109,7 +118,7 @@ class ThreadingMarkerAnnotator : Annotator {
         records: List<Pair<MarkerInfo, TraceRecord>>,
         fileName: String,
         lineNumber: Int,
-        stale: Boolean
+        stale: Boolean,
     ): GutterIconRenderer = ThreadingGutterIconRenderer(records, fileName, lineNumber, stale)
 }
 
@@ -125,21 +134,24 @@ private class ThreadingGutterIconRenderer(
     private val records: List<Pair<MarkerInfo, TraceRecord>>,
     private val fileName: String,
     private val lineNumber: Int,
-    private val stale: Boolean
+    private val stale: Boolean,
 ) : GutterIconRenderer() {
     override fun getIcon() = PluginIcons.ThreadingMarker
+
     override fun getTooltipText() = TraceHtml.tooltip(records, stale)
+
     // click opens a details popup rather than navigating to code
     override fun isNavigateAction() = true
+
     override fun getAlignment() = Alignment.LEFT
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is ThreadingGutterIconRenderer) return false
         return fileName == other.fileName &&
-                lineNumber == other.lineNumber &&
-                records.size == other.records.size &&
-                stale == other.stale
+            lineNumber == other.lineNumber &&
+            records.size == other.records.size &&
+            stale == other.stale
     }
 
     override fun hashCode(): Int {
@@ -151,11 +163,12 @@ private class ThreadingGutterIconRenderer(
     }
 
     // cached: getClickAction() is polled repeatedly, so avoid allocating each call
-    private val clickAction = object : AnAction() {
-        override fun actionPerformed(e: AnActionEvent) {
-            MarkerDetailsPopup.show(e, records, fileName, lineNumber, stale)
+    private val clickAction =
+        object : AnAction() {
+            override fun actionPerformed(e: AnActionEvent) {
+                MarkerDetailsPopup.show(e, records, fileName, lineNumber, stale)
+            }
         }
-    }
 
     override fun getClickAction(): AnAction = clickAction
 }

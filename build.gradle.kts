@@ -1,8 +1,12 @@
+import com.diffplug.gradle.spotless.SpotlessExtension
+
 plugins {
     // Root project as an aggregator; module-specific plugins are applied in subprojects.
     kotlin("jvm") version "2.2.21" apply false
     id("org.jetbrains.intellij.platform") version "2.10.5" apply false
     id("com.gradleup.shadow") version "8.3.6" apply false
+    // Code formatting/linting, applied to every module below.
+    id("com.diffplug.spotless") version "7.0.4"
 }
 
 // Single source of truth for coordinates. Applied to every module below so the
@@ -21,6 +25,34 @@ subprojects {
 
     repositories {
         mavenCentral()
+    }
+
+    // Single Spotless setup for all modules. Rules are applied per language so the
+    // Java-only modules (common, agent) and the Kotlin modules (plugin, examples)
+    // each get the right formatter. `spotlessCheck` runs in CI; `spotlessApply` fixes.
+    apply(plugin = "com.diffplug.spotless")
+    configure<SpotlessExtension> {
+        java {
+            target("src/**/*.java")
+            // Palantir keeps the existing 4-space indentation, so the initial
+            // reformat stays a small diff compared to Google Java Format.
+            palantirJavaFormat()
+            removeUnusedImports()
+            trimTrailingWhitespace()
+            endWithNewline()
+        }
+        kotlin {
+            target("src/**/*.kt")
+            // Disable the filename rule: IntelliJ plugin conventions frequently keep
+            // a listener interface in a file named after its notifier counterpart.
+            ktlint().editorConfigOverride(mapOf("ktlint_standard_filename" to "disabled"))
+            trimTrailingWhitespace()
+            endWithNewline()
+        }
+        kotlinGradle {
+            target("*.gradle.kts")
+            ktlint()
+        }
     }
 }
 

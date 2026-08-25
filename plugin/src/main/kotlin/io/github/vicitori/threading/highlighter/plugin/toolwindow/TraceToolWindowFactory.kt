@@ -28,25 +28,31 @@ import javax.swing.tree.TreePath
  * [TraceUpdateListener].
  */
 class TraceToolWindowFactory : ToolWindowFactory {
-
-    override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
+    override fun createToolWindowContent(
+        project: Project,
+        toolWindow: ToolWindow,
+    ) {
         val root = DefaultMutableTreeNode()
         val model = DefaultTreeModel(root)
-        val tree = Tree(model).apply {
-            isRootVisible = false
-            showsRootHandles = true
-            cellRenderer = TraceTreeCellRenderer()
-        }
-
-        tree.addMouseListener(object : MouseAdapter() {
-            override fun mouseClicked(e: MouseEvent) {
-                if (e.clickCount != 2) return
-                val node = tree.lastSelectedPathComponent as? DefaultMutableTreeNode ?: return
-                (node.userObject as? TraceEntry)?.let { TraceNavigator.navigateTo(project, it.trace) }
+        val tree =
+            Tree(model).apply {
+                isRootVisible = false
+                showsRootHandles = true
+                cellRenderer = TraceTreeCellRenderer()
             }
-        })
 
-        project.messageBus.connect(toolWindow.disposable)
+        tree.addMouseListener(
+            object : MouseAdapter() {
+                override fun mouseClicked(e: MouseEvent) {
+                    if (e.clickCount != 2) return
+                    val node = tree.lastSelectedPathComponent as? DefaultMutableTreeNode ?: return
+                    (node.userObject as? TraceEntry)?.let { TraceNavigator.navigateTo(project, it.trace) }
+                }
+            },
+        )
+
+        project.messageBus
+            .connect(toolWindow.disposable)
             .subscribe(TraceUpdateListener.TOPIC, TraceUpdateListener { refresh(project, tree, root, model) })
 
         val content = ContentFactory.getInstance().createContent(JBScrollPane(tree), null, false)
@@ -55,7 +61,12 @@ class TraceToolWindowFactory : ToolWindowFactory {
     }
 
     /** Builds the tree nodes off the EDT, then swaps them in and expands on the EDT. */
-    private fun refresh(project: Project, tree: JTree, root: DefaultMutableTreeNode, model: DefaultTreeModel) {
+    private fun refresh(
+        project: Project,
+        tree: JTree,
+        root: DefaultMutableTreeNode,
+        model: DefaultTreeModel,
+    ) {
         ApplicationManager.getApplication().executeOnPooledThread {
             val summary = TraceManager.getInstance(project).buildSummary()
             val newRoot = DefaultMutableTreeNode()
@@ -77,7 +88,10 @@ class TraceToolWindowFactory : ToolWindowFactory {
         }
     }
 
-    private fun expandTopLevel(tree: JTree, root: DefaultMutableTreeNode) {
+    private fun expandTopLevel(
+        tree: JTree,
+        root: DefaultMutableTreeNode,
+    ) {
         for (i in 0 until root.childCount) {
             tree.expandPath(TreePath(arrayOf<Any>(root, root.getChildAt(i))))
         }
@@ -89,15 +103,21 @@ class TraceToolWindowFactory : ToolWindowFactory {
     /** Renders file nodes, trace entries and the empty placeholder distinctly. */
     private class TraceTreeCellRenderer : ColoredTreeCellRenderer() {
         override fun customizeCellRenderer(
-            tree: JTree, value: Any?, selected: Boolean, expanded: Boolean,
-            leaf: Boolean, row: Int, hasFocus: Boolean
+            tree: JTree,
+            value: Any?,
+            selected: Boolean,
+            expanded: Boolean,
+            leaf: Boolean,
+            row: Int,
+            hasFocus: Boolean,
         ) {
             val userObject = (value as? DefaultMutableTreeNode)?.userObject
             when (userObject) {
-                is EmptyNode -> append(
-                    "No traces loaded — run the app with the agent, then Reload.",
-                    SimpleTextAttributes.GRAYED_ATTRIBUTES
-                )
+                is EmptyNode ->
+                    append(
+                        "No traces loaded — run the app with the agent, then Reload.",
+                        SimpleTextAttributes.GRAYED_ATTRIBUTES,
+                    )
                 is TraceEntry -> {
                     icon = PluginIcons.ThreadingMarker
                     append("line ${userObject.line}  ")

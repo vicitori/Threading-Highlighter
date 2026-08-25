@@ -5,7 +5,7 @@ Threading Highlighter — инструмент динамического ана
 
 Инструмент состоит из двух компонентов:
 
-1. **Агент (сбор данных).** Java-агент инструментирует threading-маркеры IntelliJ Platform — assertion-методы, покрывающие обе оси threading-модели: поток выполнения (`assertIsDispatchThread`, `assertIsNonDispatchThread`, `assertSlowOperationsAreAllowed`) и блокировки чтения/записи (`assertReadAccessAllowed`, `assertWriteAccessAllowed`). При каждом срабатывании маркера агент выполняет обход стека вызовов (`StackWalker`) и записывает фреймы пользовательского кода в JSONL-файлы.
+1. **Агент (сбор данных).** Java-агент инструментирует threading-маркеры IntelliJ Platform — assertion-методы, покрывающие обе оси threading-модели: поток выполнения (`assertIsDispatchThread`, `assertIsNonDispatchThread`, `assertSlowOperationsAreAllowed`) и блокировки чтения/записи (`assertReadAccessAllowed`, `assertWriteAccessAllowed`). При каждом срабатывании маркера агент выполняет обход стека вызовов (`StackWalker`) и записывает в JSONL-файлы фреймы кода анализируемого плагина — только из базовых пакетов, объявленных через белый список (`threading.highlighter.include.packages`).
 2. **Плагин (визуализация).** Плагин IntelliJ загружает записанные трассы и отображает gutter-иконки напротив строк, попавших в стек до маркера. Разработчик видит действующие threading-контракты прямо в редакторе.
 
 ![Gutter-иконки с threading-маркерами](gutter-view.png)
@@ -57,6 +57,7 @@ tasks {
     runIde {
         jvmArgs("-javaagent:/path/to/agent.jar")
         systemProperty("threading.highlighter.project.dir", "${project.projectDir}")
+        systemProperty("threading.highlighter.include.packages", "com.example.myplugin")
         systemProperty("threading.highlighter.append.session", "true")
     }
 }
@@ -89,7 +90,7 @@ JVM #1 — рабочая IDE                 JVM #2 — sandbox-IDE (runIde)
 
    Это самые частые threading-контракты в коде плагинов; полный список задан в `Markers.java`. Трасса появляется только тогда, когда выполнение проходит через один из этих методов. Обычное JVM-приложение их не вызывает, поэтому анализировать имеет смысл только плагин IntelliJ Platform, запускаемый через `runIde`.
 
-2. **Базовый пакет проекта не начинается с зарезервированного префикса.** Из стека агент оставляет только пользовательские фреймы, отбрасывая классы с префиксами `java.`, `javax.`, `jdk.`, `sun.`, `com.sun.`, `kotlin.`, `kotlinx.`, `com.intellij.` (см. `StackCapture.FRAMEWORK_PREFIXES`). Класс `com.intellij.myplugin.Foo` будет отброшен целиком, и его строки не получат gutter-иконок. Это редкий случай плагинов с кодом под `com.intellij.*`; список префиксов зашит в агент и не настраивается опциями — отсечь инфраструктуру платформы важнее, чем поддержать такой плагин.
+2. **Базовые пакеты проекта заданы в `threading.highlighter.include.packages`.** Из стека агент оставляет только фреймы, попадающие под один из объявленных пакетов (allow list, см. `IncludePackageFilter`). Сопоставление учитывает границу пакета: `com.example` включает `com.example.Foo`, но не `com.exampleOther.Bar`. Если свойство не задано, агент не захватит ни одного фрейма и запишет предупреждение в лог — это осознанный выбор в пользу белого списка: чёрный список фреймворковых пакетов принципиально неполон (в JVM живут ядро IDE и десятки bundled-плагинов), поэтому нужный код надёжнее перечислить явно.
 
 3. **Нужный путь кода реально выполняется в сессии.** Инструмент фиксирует только фактически пройденные вызовы. Метод, который не был вызван за время работы sandbox-IDE, трасс не даёт, поэтому полнота результата равна полноте ручного воспроизведения сценариев.
 
@@ -106,9 +107,9 @@ JVM #1 — рабочая IDE                 JVM #2 — sandbox-IDE (runIde)
 
    > Устанавливайте именно `plugin.zip`, а не отдельный `plugin.jar`. ZIP содержит модуль `common` и агент; при установке одного `plugin.jar` плагин завершится с `NoClassDefFoundError`.
 
-2. **Получите VM-аргументы агента**: **Tools → Threading Highlighter → Copy Agent VM Options**. Действие копирует в буфер готовую строку `-javaagent:… -Dthreading.highlighter.project.dir=…`; путь к вложенному агенту вычисляется автоматически.
+2. **Получите VM-аргументы агента**: **Tools → Threading Highlighter → Enable Agent…**. Действие открывает диалог с готовой строкой `-javaagent:… -Dthreading.highlighter.project.dir=… -Dthreading.highlighter.include.packages=<your.base.package>`; путь к вложенному агенту вычисляется автоматически.
 
-3. **Подключите агент** к анализируемой JVM — вставьте скопированную строку в VM options нужной run-конфигурации или в блок `runIde` анализируемого проекта (см. «Параметры подключения» ниже).
+3. **Подключите агент** к анализируемой JVM — вставьте скопированную строку в VM options нужной run-конфигурации или в блок `runIde` анализируемого проекта и **замените `<your.base.package>` на базовый пакет анализируемого плагина** (см. «Параметры подключения» ниже).
 
 4. **Запустите и воспроизведите сценарий**, закройте sandbox-IDE и вернитесь в рабочую IDE (см. «Просмотр результатов»).
 
@@ -129,14 +130,15 @@ JVM #1 — рабочая IDE                 JVM #2 — sandbox-IDE (runIde)
 - Agent JAR — `agent/build/libs/agent.jar`
 - Plugin ZIP — `plugin/build/distributions/plugin.zip`
 
-Дальше — как в сценарии A: установите `plugin.zip` в рабочую IDE и подключите агент. При сборке из исходников можно указать путь к `agent/build/libs/agent.jar` напрямую, без Copy Agent VM Options.
+При сборке из исходников можно указать путь к `agent/build/libs/agent.jar` напрямую, без действия Enable Agent… (не забудьте задать `threading.highlighter.include.packages`).
 
 ### Параметры подключения агента
 
-Агент подключается к JVM, код которой анализируется (как правило, sandbox-IDE от `runIde`). Обязательны два параметра:
+Агент подключается к JVM, код которой анализируется (как правило, sandbox-IDE от `runIde`). Обязательны три параметра:
 
 - JVM-аргумент `-javaagent:/path/to/agent.jar` — путь к JAR агента;
-- системное свойство `threading.highlighter.project.dir` — базовый путь, относительно которого создаётся директория `.ij-threading-highlighter/` для trace-файлов.
+- системное свойство `threading.highlighter.project.dir` — базовый путь, относительно которого создаётся директория `.ij-threading-highlighter/` для trace-файлов;
+- системное свойство `threading.highlighter.include.packages` — список базовых пакетов анализируемого плагина через запятую (например, `com.example.myplugin`). Агент захватывает **только** фреймы из этих пакетов (allow list). Без него агент не может отличить код плагина от кода десятков bundled-плагинов и библиотек в той же JVM — трассы окажутся пустыми.
 
 Пример для `runIde`:
 
@@ -145,6 +147,7 @@ tasks {
     runIde {
         jvmArgs("-javaagent:/path/to/agent.jar")
         systemProperty("threading.highlighter.project.dir", "${project.projectDir}")
+        systemProperty("threading.highlighter.include.packages", "com.example.myplugin")
     }
 }
 ```
@@ -158,7 +161,7 @@ tasks {
 | `threading.highlighter.flush.interval.minutes` | `15` | Интервал периодического сброса трасс на диск. Полный сброс также выполняется при завершении JVM. |
 | `threading.highlighter.min.capture.interval.millis` | `0` | Минимальный интервал между захватами стека для одного маркера. `0` — захват при каждом срабатывании; большее значение снижает нагрузку на частых маркерах ценой полноты данных. |
 
-Фреймы JDK и платформы (`java.*`, `javax.*`, `com.intellij.*` и др.) отфильтровываются агентом на этапе записи.
+Захват работает по принципу **белого списка** (`include.packages`): в трассу попадают только фреймы из объявленных пакетов анализируемого плагина. Чёрного списка фреймворковых пакетов нет — он принципиально неполон (в JVM живут ядро IDE и десятки bundled-плагинов), поэтому надёжнее перечислить нужный код явно.
 
 ### Просмотр результатов
 
@@ -178,3 +181,7 @@ tasks {
 ```
 
 Задача собирает агент, подключает его к запускаемой IDE и задаёт необходимые системные свойства (это готовый пример шагов 3 из сценария A). Выполните один из демонстрационных actions (меню Tools или Find Action) и закройте sandbox-IDE. В рабочей IDE в коде модуля `examples/` появятся gutter-иконки с результатами анализа.
+
+## Разработка и релиз
+
+Форматирование кода (Spotless), настройка CI и пошаговый процесс ручного релиза вынесены в отдельный документ: [docs/development-and-release.md](docs/development-and-release.md).

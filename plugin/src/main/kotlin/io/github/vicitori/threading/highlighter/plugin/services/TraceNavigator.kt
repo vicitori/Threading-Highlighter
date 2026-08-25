@@ -16,9 +16,11 @@ import io.github.vicitori.threading.highlighter.common.trace.TraceRecord
  * the class package, and jumps to the recorded line.
  */
 object TraceNavigator {
-
     /** Navigates to the record's file and line. Returns true if a file was opened. */
-    fun navigateTo(project: Project, trace: TraceRecord): Boolean {
+    fun navigateTo(
+        project: Project,
+        trace: TraceRecord,
+    ): Boolean {
         val fileName = trace.fileName ?: return false
         val target = findFile(project, fileName, trace.className) ?: return false
         // trace line numbers are 1-based; OpenFileDescriptor expects 0-based
@@ -27,10 +29,15 @@ object TraceNavigator {
         return true
     }
 
-    private fun findFile(project: Project, fileName: String, className: String): VirtualFile? {
-        val candidates = ReadAction.compute<Collection<VirtualFile>, RuntimeException> {
-            FilenameIndex.getVirtualFilesByName(fileName, GlobalSearchScope.projectScope(project))
-        }
+    private fun findFile(
+        project: Project,
+        fileName: String,
+        className: String,
+    ): VirtualFile? {
+        val candidates =
+            ReadAction.compute<Collection<VirtualFile>, RuntimeException> {
+                FilenameIndex.getVirtualFilesByName(fileName, GlobalSearchScope.projectScope(project))
+            }
         if (candidates.isEmpty()) return null
         if (candidates.size == 1) return candidates.first()
 

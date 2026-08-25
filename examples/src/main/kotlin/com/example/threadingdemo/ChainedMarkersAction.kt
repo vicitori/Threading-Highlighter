@@ -8,7 +8,6 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 
 class ChainedMarkersAction : AnAction("All Markers (Chained Example)") {
-
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
 
@@ -57,8 +56,12 @@ class ChainedMarkersAction : AnAction("All Markers (Chained Example)") {
         }
     }
 
-    private fun showNotification(project: Project, message: String) {
-        NotificationGroupManager.getInstance()
+    private fun showNotification(
+        project: Project,
+        message: String,
+    ) {
+        NotificationGroupManager
+            .getInstance()
             .getNotificationGroup("Threading Highlighter")
             .createNotification(message, NotificationType.INFORMATION)
             .notify(project)

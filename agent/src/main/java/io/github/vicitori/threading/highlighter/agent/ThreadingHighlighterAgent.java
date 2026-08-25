@@ -1,18 +1,16 @@
 package io.github.vicitori.threading.highlighter.agent;
 
+import io.github.vicitori.threading.highlighter.agent.common.AgentLog;
 import io.github.vicitori.threading.highlighter.agent.marker.MarkerAdvice;
 import io.github.vicitori.threading.highlighter.agent.trace.TraceWriter;
 import io.github.vicitori.threading.highlighter.common.marker.MarkerInfo;
 import io.github.vicitori.threading.highlighter.common.marker.Markers;
-import net.bytebuddy.agent.builder.AgentBuilder;
-import net.bytebuddy.asm.Advice;
-import net.bytebuddy.matcher.ElementMatchers;
-
-import io.github.vicitori.threading.highlighter.agent.common.AgentLog;
-
 import java.lang.instrument.Instrumentation;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import net.bytebuddy.agent.builder.AgentBuilder;
+import net.bytebuddy.asm.Advice;
+import net.bytebuddy.matcher.ElementMatchers;
 
 /**
  * Agent entry point. It installs Byte Buddy advice on the known threading assertion
@@ -60,7 +58,8 @@ public final class ThreadingHighlighterAgent {
     }
 
     private static AgentBuilder configureAgent() {
-        return new AgentBuilder.Default().with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION)
+        return new AgentBuilder.Default()
+                .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION)
                 .with(AgentBuilder.Listener.StreamWriting.toSystemError().withErrorsOnly())
                 // skip the JDK and the agent's own classes, or the advice could recurse
                 .ignore(ElementMatchers.nameStartsWith("net.bytebuddy.")

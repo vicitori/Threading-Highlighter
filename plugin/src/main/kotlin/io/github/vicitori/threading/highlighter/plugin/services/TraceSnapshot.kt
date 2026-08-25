@@ -14,13 +14,15 @@ import io.github.vicitori.threading.highlighter.plugin.models.MarkerTraceData
 class TraceSnapshot private constructor(
     private val traceDataByMarker: Map<String, MarkerTraceData>,
     // reverse index for fast per-line lookups by the annotator
-    private val locationIndex: Map<String, Map<Int, List<Pair<MarkerInfo, TraceRecord>>>>
+    private val locationIndex: Map<String, Map<Int, List<Pair<MarkerInfo, TraceRecord>>>>,
 ) {
     val isEmpty: Boolean get() = traceDataByMarker.isEmpty()
     val markerCount: Int get() = traceDataByMarker.size
 
-    fun getRecordsForLocation(fileName: String, lineNumber: Int): List<Pair<MarkerInfo, TraceRecord>> =
-        locationIndex[fileName]?.get(lineNumber) ?: emptyList()
+    fun getRecordsForLocation(
+        fileName: String,
+        lineNumber: Int,
+    ): List<Pair<MarkerInfo, TraceRecord>> = locationIndex[fileName]?.get(lineNumber) ?: emptyList()
 
     fun forEachLocation(action: (fileName: String, line: Int, marker: MarkerInfo, trace: TraceRecord) -> Unit) {
         for ((fileName, lineMap) in locationIndex) {
@@ -44,7 +46,8 @@ class TraceSnapshot private constructor(
                 for (trace in traceData.traces) {
                     val fileName = trace.fileName ?: continue
                     if (trace.lineNumber <= 0) continue
-                    index.computeIfAbsent(fileName) { HashMap() }
+                    index
+                        .computeIfAbsent(fileName) { HashMap() }
                         .computeIfAbsent(trace.lineNumber) { ArrayList() }
                         .add(traceData.marker to trace)
                 }

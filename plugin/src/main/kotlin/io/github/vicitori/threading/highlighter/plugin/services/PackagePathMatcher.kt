@@ -9,17 +9,19 @@ package io.github.vicitori.threading.highlighter.plugin.services
  * they cannot drift apart.
  */
 object PackagePathMatcher {
-
     /** Package of a class FQN; nested/lambda classes use `$`, dropped first. */
-    fun packageOf(className: String): String =
-        className.substringBefore('$').substringBeforeLast('.', missingDelimiterValue = "")
+    fun packageOf(className: String): String = className.substringBefore('$').substringBeforeLast('.', missingDelimiterValue = "")
 
     /**
      * True if [filePath] belongs to [packageName]. When [fileName] is given, the path
      * must end with `/<package>/<file>` (both package and file line up); otherwise it
      * only needs to contain the package segment.
      */
-    fun matches(filePath: String, packageName: String, fileName: String?): Boolean {
+    fun matches(
+        filePath: String,
+        packageName: String,
+        fileName: String?,
+    ): Boolean {
         val normalized = filePath.replace('\\', '/')
         if (fileName == null) {
             if (packageName.isEmpty()) return true

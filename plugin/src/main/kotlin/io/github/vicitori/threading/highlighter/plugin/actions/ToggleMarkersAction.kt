@@ -12,7 +12,6 @@ import io.github.vicitori.threading.highlighter.plugin.services.MarkerStateServi
  * The action label reflects the next action ("Show"/"Hide") based on current state.
  */
 class ToggleMarkersAction : AnAction() {
-
     // update() only reads the marker state service, so it is safe off the EDT
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
 

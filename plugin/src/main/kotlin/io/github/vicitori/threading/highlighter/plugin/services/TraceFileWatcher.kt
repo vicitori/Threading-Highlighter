@@ -3,11 +3,11 @@ package io.github.vicitori.threading.highlighter.plugin.services
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.ProjectActivity
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.openapi.vfs.newvfs.BulkFileListener
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
-import com.intellij.openapi.project.Project
 import com.intellij.util.Alarm
 import io.github.vicitori.threading.highlighter.common.config.ThreadingHighlighterConfig
 
@@ -35,7 +35,7 @@ class TraceFileWatcher : ProjectActivity {
                     alarm.cancelAllRequests()
                     alarm.addRequest({ TraceManager.getInstance(project).reloadTraces() }, DEBOUNCE_MS)
                 }
-            }
+            },
         )
 
         // initial load: the service starts empty and VFS events only fire on later
@@ -44,8 +44,7 @@ class TraceFileWatcher : ProjectActivity {
         TraceManager.getInstance(project).reloadTraces()
     }
 
-    private fun VFileEvent.isInTracesDir(): Boolean =
-        path.contains(ThreadingHighlighterConfig.TRACES_DIR_NAME)
+    private fun VFileEvent.isInTracesDir(): Boolean = path.contains(ThreadingHighlighterConfig.TRACES_DIR_NAME)
 }
 
 /**

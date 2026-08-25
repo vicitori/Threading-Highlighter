@@ -8,7 +8,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.util.SlowOperations
 
 class SlowOperationOnEdtAction : AnAction("Slow Operation Marker Only") {
-
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
         SlowOperations.assertSlowOperationsAreAllowed()
@@ -22,7 +21,8 @@ class SlowOperationOnEdtAction : AnAction("Slow Operation Marker Only") {
     }
 
     private fun showNotification(project: Project) {
-        NotificationGroupManager.getInstance()
+        NotificationGroupManager
+            .getInstance()
             .getNotificationGroup("Threading Highlighter")
             .createNotification("Slow operation completed on EDT", NotificationType.INFORMATION)
             .notify(project)

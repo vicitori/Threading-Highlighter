@@ -16,8 +16,12 @@ import io.github.vicitori.threading.highlighter.plugin.ui.AgentSetupDialog
  * delivery path.
  */
 class CopyAgentArgsAction : AnAction() {
-
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
+
+    private companion object {
+        // Obvious sentinel so the user notices they must substitute their base package.
+        const val INCLUDE_PACKAGES_PLACEHOLDER = "<your.base.package>"
+    }
 
     override fun update(e: AnActionEvent) {
         e.presentation.isEnabledAndVisible = e.project != null
@@ -28,18 +32,25 @@ class CopyAgentArgsAction : AnAction() {
 
         val agentJar = AgentLocator.findAgentJar()
         if (agentJar == null) {
-            NotificationGroupManager.getInstance().getNotificationGroup("Threading Highlighter")
+            NotificationGroupManager
+                .getInstance()
+                .getNotificationGroup("Threading Highlighter")
                 .createNotification(
                     "Threading Highlighter agent not found",
                     "The bundled agent.jar is missing from the plugin installation.",
-                    NotificationType.ERROR
+                    NotificationType.ERROR,
                 ).notify(project)
             return
         }
 
         val projectDir = project.basePath ?: "\$PROJECT_DIR\$"
-        val vmArgs = "-javaagent:$agentJar " +
-                "-D${ThreadingHighlighterConfig.PROJECT_DIR_PROPERTY}=$projectDir"
+        // The include-packages allow list is the one value we cannot infer: it is the
+        // analyzed plugin's base package. Emit a placeholder the user must replace so
+        // frames of their own code (not bundled plugins/libraries) end up in traces.
+        val vmArgs =
+            "-javaagent:$agentJar " +
+                "-D${ThreadingHighlighterConfig.PROJECT_DIR_PROPERTY}=$projectDir " +
+                "-D${ThreadingHighlighterConfig.INCLUDE_PACKAGES_PROPERTY}=$INCLUDE_PACKAGES_PLACEHOLDER"
 
         AgentSetupDialog(project, vmArgs).show()
     }

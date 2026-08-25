@@ -22,29 +22,39 @@ object MarkerDetailsPopup {
     private const val HEIGHT = 200
     private const val PAD = 12
 
-    fun show(e: AnActionEvent, records: List<Pair<MarkerInfo, TraceRecord>>, fileName: String, lineNumber: Int, stale: Boolean) {
+    fun show(
+        e: AnActionEvent,
+        records: List<Pair<MarkerInfo, TraceRecord>>,
+        fileName: String,
+        lineNumber: Int,
+        stale: Boolean,
+    ) {
         val project = e.project
-        val pane = JEditorPane().apply {
-            editorKit = HTMLEditorKitBuilder().build()
-            text = TraceHtml.details(records, fileName, lineNumber, stale)
-            isEditable = false
-            background = UIUtil.getPanelBackground()
-            // breathing room so text does not stick to the popup edges
-            border = JBUI.Borders.empty(PAD)
-            caretPosition = 0
-        }
-        val scroll = JBScrollPane(pane).apply {
-            preferredSize = Dimension(JBUI.scale(WIDTH), JBUI.scale(HEIGHT))
-            border = JBUI.Borders.empty()
-            viewport.background = UIUtil.getPanelBackground()
-        }
-        val popup = JBPopupFactory.getInstance()
-            .createComponentPopupBuilder(scroll, pane)
-            .setTitle("Threading Marker Details")
-            .setResizable(true)
-            .setMovable(true)
-            .setRequestFocus(true)
-            .createPopup()
+        val pane =
+            JEditorPane().apply {
+                editorKit = HTMLEditorKitBuilder().build()
+                text = TraceHtml.details(records, fileName, lineNumber, stale)
+                isEditable = false
+                background = UIUtil.getPanelBackground()
+                // breathing room so text does not stick to the popup edges
+                border = JBUI.Borders.empty(PAD)
+                caretPosition = 0
+            }
+        val scroll =
+            JBScrollPane(pane).apply {
+                preferredSize = Dimension(JBUI.scale(WIDTH), JBUI.scale(HEIGHT))
+                border = JBUI.Borders.empty()
+                viewport.background = UIUtil.getPanelBackground()
+            }
+        val popup =
+            JBPopupFactory
+                .getInstance()
+                .createComponentPopupBuilder(scroll, pane)
+                .setTitle("Threading Marker Details")
+                .setResizable(true)
+                .setMovable(true)
+                .setRequestFocus(true)
+                .createPopup()
 
         // href carries the record index; navigate to that frame's source
         pane.addHyperlinkListener { event ->

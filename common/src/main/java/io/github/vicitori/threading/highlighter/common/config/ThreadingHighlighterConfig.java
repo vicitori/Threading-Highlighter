@@ -1,7 +1,6 @@
 package io.github.vicitori.threading.highlighter.common.config;
 
 import io.github.vicitori.threading.highlighter.common.marker.MarkerInfo;
-
 import java.io.File;
 import java.nio.file.Path;
 
@@ -16,6 +15,22 @@ public final class ThreadingHighlighterConfig {
 
     public static final String PROJECT_DIR_PROPERTY = "threading.highlighter.project.dir";
     public static final String TRACES_DIR_NAME = ".ij-threading-highlighter";
+
+    /**
+     * Comma-separated list of package prefixes whose frames are kept in traces.
+     *
+     * <p>The capture step uses an <b>allow list</b>: a stack frame is recorded only
+     * when its class name falls under one of these packages. This is the single knob
+     * that tells the tool which code is "user code" for the analyzed plugin (e.g.
+     * {@code com.example.myplugin}). Without it the agent cannot tell the plugin's
+     * own frames apart from the many bundled plugins and libraries sharing the JVM,
+     * so nothing is captured. The name is shared here because the agent parses it and
+     * the plugin puts it into the generated {@code -javaagent} VM options.
+     */
+    public static final String INCLUDE_PACKAGES_PROPERTY = "threading.highlighter.include.packages";
+
+    /** Separator between package prefixes in {@link #INCLUDE_PACKAGES_PROPERTY}. */
+    public static final String INCLUDE_PACKAGES_SEPARATOR = ",";
 
     private static final String SAFE_FILENAME_PATTERN = "[^a-zA-Z0-9._-]";
     private static final int MAX_PARENT_LEVELS = 3;
@@ -77,11 +92,9 @@ public final class ThreadingHighlighterConfig {
     public static Path getTracesPathFromSystemProperty() {
         String projectDir = System.getProperty(PROJECT_DIR_PROPERTY);
         if (projectDir == null) {
-            throw new IllegalStateException(
-                    "System property '" + PROJECT_DIR_PROPERTY + "' is not set.\n"
-                            + "Please configure it in your build.gradle.kts:\n"
-                            + "systemProperty(\"" + PROJECT_DIR_PROPERTY + "\", \"${project.projectDir}\")"
-            );
+            throw new IllegalStateException("System property '" + PROJECT_DIR_PROPERTY + "' is not set.\n"
+                    + "Please configure it in your build.gradle.kts:\n"
+                    + "systemProperty(\"" + PROJECT_DIR_PROPERTY + "\", \"${project.projectDir}\")");
         }
         return getTracesPath(projectDir);
     }
@@ -98,6 +111,5 @@ public final class ThreadingHighlighterConfig {
         return path.toFile().isDirectory();
     }
 
-    private ThreadingHighlighterConfig() {
-    }
+    private ThreadingHighlighterConfig() {}
 }

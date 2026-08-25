@@ -1,13 +1,12 @@
 package io.github.vicitori.threading.highlighter.common.config;
 
-import io.github.vicitori.threading.highlighter.common.marker.Markers;
-import org.junit.jupiter.api.Test;
-
-import java.nio.file.Path;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import io.github.vicitori.threading.highlighter.common.marker.Markers;
+import java.nio.file.Path;
+import org.junit.jupiter.api.Test;
 
 /**
  * Covers the filename sanitization and traces-path rules shared by the agent and
@@ -21,9 +20,7 @@ class ThreadingHighlighterConfigTest {
         // '#' from markerFqn() is not filename-safe; dots stay, extension is added
         String fileName = ThreadingHighlighterConfig.getTraceFileName(Markers.SLOW_OPERATION.markerFqn());
 
-        assertEquals(
-                "com.intellij.util.SlowOperations_assertSlowOperationsAreAllowed.jsonl",
-                fileName);
+        assertEquals("com.intellij.util.SlowOperations_assertSlowOperationsAreAllowed.jsonl", fileName);
     }
 
     @Test
@@ -62,8 +59,7 @@ class ThreadingHighlighterConfigTest {
         String previous = System.getProperty(ThreadingHighlighterConfig.PROJECT_DIR_PROPERTY);
         System.clearProperty(ThreadingHighlighterConfig.PROJECT_DIR_PROPERTY);
         try {
-            assertThrows(IllegalStateException.class,
-                    ThreadingHighlighterConfig::getTracesPathFromSystemProperty);
+            assertThrows(IllegalStateException.class, ThreadingHighlighterConfig::getTracesPathFromSystemProperty);
         } finally {
             if (previous != null) {
                 System.setProperty(ThreadingHighlighterConfig.PROJECT_DIR_PROPERTY, previous);

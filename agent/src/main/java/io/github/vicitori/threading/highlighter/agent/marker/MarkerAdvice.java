@@ -2,9 +2,8 @@ package io.github.vicitori.threading.highlighter.agent.marker;
 
 import io.github.vicitori.threading.highlighter.agent.common.AgentLog;
 import io.github.vicitori.threading.highlighter.agent.trace.TraceWriter;
-import net.bytebuddy.asm.Advice;
-
 import java.lang.reflect.Method;
+import net.bytebuddy.asm.Advice;
 
 /**
  * Byte Buddy advice that runs at the start of each instrumented assertion method.

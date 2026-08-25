@@ -15,14 +15,12 @@ private val LOG = logger<TraceLineCodec>()
  * takes care of files, dedup and filtering.
  */
 object TraceLineCodec {
-    fun decode(line: String): TraceRecord? {
-        return try {
-            TraceJson.decode(line)
-        } catch (e: ProcessCanceledException) {
-            throw e // platform cancellation must never be swallowed
-        } catch (e: Exception) {
-            LOG.warn("Failed to parse trace line: ${line.take(100)}", e)
-            null
-        }
+    fun decode(line: String): TraceRecord? = try {
+        TraceJson.decode(line)
+    } catch (e: ProcessCanceledException) {
+        throw e // platform cancellation must never be swallowed
+    } catch (e: Exception) {
+        LOG.warn("Failed to parse trace line: ${line.take(100)}", e)
+        null
     }
 }

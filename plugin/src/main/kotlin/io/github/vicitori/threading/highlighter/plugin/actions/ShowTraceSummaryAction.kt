@@ -8,7 +8,6 @@ import io.github.vicitori.threading.highlighter.plugin.ui.TextInfoDialog
 import io.github.vicitori.threading.highlighter.plugin.ui.TraceHtml
 
 class ShowTraceSummaryAction : AnAction() {
-
     // update() only reads e.project, so it is safe to compute off the EDT
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
 

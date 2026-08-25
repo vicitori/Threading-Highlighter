@@ -19,23 +19,27 @@ private const val WIDGET_ID = "ThreadingHighlighter.StatusBar"
  */
 class TraceStatusBarWidgetFactory : StatusBarWidgetFactory {
     override fun getId() = WIDGET_ID
+
     override fun getDisplayName() = "Threading Highlighter"
+
     override fun createWidget(project: Project): StatusBarWidget = TraceStatusBarWidget(project)
 }
 
 private class TraceStatusBarWidget(
-    private val project: Project
-) : StatusBarWidget, StatusBarWidget.TextPresentation {
-
+    private val project: Project,
+) : StatusBarWidget,
+    StatusBarWidget.TextPresentation {
     private var statusBar: StatusBar? = null
 
     override fun ID() = WIDGET_ID
+
     override fun getPresentation() = this
 
     override fun install(statusBar: StatusBar) {
         this.statusBar = statusBar
         // update the text whenever traces are reloaded
-        project.messageBus.connect(this)
+        project.messageBus
+            .connect(this)
             .subscribe(TraceUpdateListener.TOPIC, TraceUpdateListener { statusBar.updateWidget(WIDGET_ID) })
     }
 
@@ -46,8 +50,7 @@ private class TraceStatusBarWidget(
 
     override fun getAlignment() = 0f
 
-    override fun getTooltipText() =
-        "Threading Highlighter — click to reload traces from the agent output"
+    override fun getTooltipText() = "Threading Highlighter — click to reload traces from the agent output"
 
     override fun getClickConsumer() = Consumer<MouseEvent> {
         TraceManager.getInstance(project).reloadTraces()

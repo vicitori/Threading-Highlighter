@@ -16,11 +16,8 @@ public final class TraceRecord {
     private final int lineNumber;
     private final long lastSeenTimestampEpochMillis;
 
-    public TraceRecord(String className,
-                       String methodName,
-                       String fileName,
-                       int lineNumber,
-                       long lastSeenTimestampEpochMillis) {
+    public TraceRecord(
+            String className, String methodName, String fileName, int lineNumber, long lastSeenTimestampEpochMillis) {
         this.className = className;
         this.methodName = methodName;
         this.fileName = fileName;

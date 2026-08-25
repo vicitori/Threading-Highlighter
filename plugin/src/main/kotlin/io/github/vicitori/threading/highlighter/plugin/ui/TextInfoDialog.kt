@@ -24,9 +24,8 @@ class TextInfoDialog(
     project: Project,
     dialogTitle: String,
     private val content: String,
-    private val isHtml: Boolean = false
+    private val isHtml: Boolean = false,
 ) : DialogWrapper(project) {
-
     init {
         title = dialogTitle
         init()

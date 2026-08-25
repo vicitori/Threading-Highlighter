@@ -16,10 +16,8 @@ public final class StackFrameMapper {
                 element.getMethodName(),
                 element.getFileName(),
                 element.getLineNumber(),
-                timestampMillis
-        );
+                timestampMillis);
     }
 
-    private StackFrameMapper() {
-    }
+    private StackFrameMapper() {}
 }

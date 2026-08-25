@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Test
  * Edge cases of the user-code predicate. Pure logic, no IntelliJ platform runtime.
  */
 class UserCodeFilterTest {
-
     @Test
     fun emptyPackagesTreatsEverythingAsUserCode() {
         // no packages detected: show all, hide nothing

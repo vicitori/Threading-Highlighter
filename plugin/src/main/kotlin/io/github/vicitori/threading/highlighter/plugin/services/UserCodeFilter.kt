@@ -53,7 +53,10 @@ object UserCodeFilter {
         return parts.joinToString(".")
     }
 
-    private fun collectPackageParts(dir: VirtualFile, parts: MutableList<String>) {
+    private fun collectPackageParts(
+        dir: VirtualFile,
+        parts: MutableList<String>,
+    ) {
         parts.add(dir.name)
         val subdirs = dir.children.filter { it.isDirectory }
         // follow single-child folders down to the real base package (e.g. io/github/app)
@@ -62,7 +65,10 @@ object UserCodeFilter {
         }
     }
 
-    fun isUserCode(className: String, userPackages: List<String>): Boolean {
+    fun isUserCode(
+        className: String,
+        userPackages: List<String>,
+    ): Boolean {
         // no packages detected: do not hide anything
         if (userPackages.isEmpty()) {
             return true

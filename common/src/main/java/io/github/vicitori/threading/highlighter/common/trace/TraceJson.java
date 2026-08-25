@@ -105,8 +105,7 @@ public final class TraceJson {
         return sb.toString();
     }
 
-    private TraceJson() {
-    }
+    private TraceJson() {}
 
     /** Minimal recursive-descent reader for the flat trace-line object. */
     private static final class Parser {

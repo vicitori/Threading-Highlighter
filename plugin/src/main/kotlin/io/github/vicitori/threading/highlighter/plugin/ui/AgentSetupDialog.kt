@@ -17,9 +17,8 @@ import javax.swing.JComponent
  */
 class AgentSetupDialog(
     project: Project,
-    private val vmArgs: String
+    private val vmArgs: String,
 ) : DialogWrapper(project) {
-
     init {
         title = "Enable Threading Highlighter Agent"
         init()
@@ -30,12 +29,13 @@ class AgentSetupDialog(
             label("Add these VM options to your run configuration, then restart it:")
         }
         row {
-            val area = JBTextArea(vmArgs).apply {
-                isEditable = false
-                lineWrap = true
-                wrapStyleWord = true
-                rows = 3
-            }
+            val area =
+                JBTextArea(vmArgs).apply {
+                    isEditable = false
+                    lineWrap = true
+                    wrapStyleWord = true
+                    rows = 3
+                }
             cell(area).align(com.intellij.ui.dsl.builder.AlignX.FILL)
         }
         row {
@@ -51,13 +51,15 @@ class AgentSetupDialog(
     override fun createActions() = arrayOf(okAction)
 
     companion object {
-        private val STEPS_HTML = """
+        private val STEPS_HTML =
+            """
             <html><ol style='margin-left:14px'>
               <li>Run &rarr; Edit Configurations…</li>
               <li>Open your run configuration (or add a JVM/Application one)</li>
               <li>Paste the options into the <b>VM options</b> field</li>
+              <li>Replace <b>&lt;your.base.package&gt;</b> with your plugin's base package (e.g. com.example.myplugin)</li>
               <li>Run again &mdash; markers appear after the app exercises them</li>
             </ol></html>
-        """.trimIndent()
+            """.trimIndent()
     }
 }

@@ -5,5 +5,5 @@ import io.github.vicitori.threading.highlighter.common.trace.TraceRecord
 
 data class MarkerTraceData(
     val marker: MarkerInfo,
-    val traces: List<TraceRecord>
+    val traces: List<TraceRecord>,
 )

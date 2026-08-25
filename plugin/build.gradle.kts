@@ -45,14 +45,16 @@ intellijPlatform {
     // one extra jar; can be turned back on before publishing if needed.
     buildSearchableOptions = false
 
-    // Used by the CI `verify` job to check compatibility against target IDEs
+    // Run `./gradlew :plugin:verifyPlugin` locally before a manual release to
+    // check binary compatibility against the recommended target IDEs.
     pluginVerification {
         ides {
             recommended()
         }
     }
 
-    // Credentials are supplied by the CI `release` job via environment variables
+    // Manual release: provide these via environment variables when running
+    // `./gradlew :plugin:publishPlugin` (see JetBrains Marketplace credentials).
     signing {
         certificateChain = providers.environmentVariable("CERTIFICATE_CHAIN")
         privateKey = providers.environmentVariable("PRIVATE_KEY")

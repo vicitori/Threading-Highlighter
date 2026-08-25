@@ -15,7 +15,10 @@ import kotlin.io.path.readLines
  * for each location, the record with the newest timestamp.
  */
 class TraceRepository {
-    fun readTraceFile(path: Path, userPackages: List<String>): List<TraceRecord> {
+    fun readTraceFile(
+        path: Path,
+        userPackages: List<String>,
+    ): List<TraceRecord> {
         if (!path.exists()) {
             return emptyList()
         }
@@ -38,7 +41,5 @@ class TraceRepository {
         return tracesByKey.values.toList()
     }
 
-    fun getTraceFileName(marker: MarkerInfo): String {
-        return ThreadingHighlighterConfig.getTraceFileName(marker)
-    }
+    fun getTraceFileName(marker: MarkerInfo): String = ThreadingHighlighterConfig.getTraceFileName(marker)
 }

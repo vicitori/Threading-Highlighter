@@ -13,14 +13,15 @@ import org.junit.jupiter.api.Test
  * skipped, and that lookups are consistent. Pure logic, no IntelliJ platform runtime.
  */
 class TraceSnapshotTest {
-
     private val marker = MarkerInfo("com.intellij.util.SlowOperations", "assertSlowOperationsAreAllowed", "Slow", "desc")
 
-    private fun record(fileName: String?, line: Int, ts: Long = 1_700_000_000_000L) =
-        TraceRecord("com.example.OrderService", "placeOrder", fileName, line, ts)
+    private fun record(
+        fileName: String?,
+        line: Int,
+        ts: Long = 1_700_000_000_000L,
+    ) = TraceRecord("com.example.OrderService", "placeOrder", fileName, line, ts)
 
-    private fun snapshotOf(vararg traces: TraceRecord): TraceSnapshot =
-        TraceSnapshot.of(mapOf(marker.markerFqn() to MarkerTraceData(marker, traces.toList())))
+    private fun snapshotOf(vararg traces: TraceRecord): TraceSnapshot = TraceSnapshot.of(mapOf(marker.markerFqn() to MarkerTraceData(marker, traces.toList())))
 
     @Test
     fun emptyMapProducesEmptySnapshot() {
@@ -71,10 +72,11 @@ class TraceSnapshotTest {
 
     @Test
     fun groupsMultipleRecordsOnSameLine() {
-        val snapshot = snapshotOf(
-            TraceRecord("com.example.A", "run", "Shared.java", 10, 1L),
-            TraceRecord("com.example.B", "run", "Shared.java", 10, 2L)
-        )
+        val snapshot =
+            snapshotOf(
+                TraceRecord("com.example.A", "run", "Shared.java", 10, 1L),
+                TraceRecord("com.example.B", "run", "Shared.java", 10, 2L),
+            )
 
         assertEquals(2, snapshot.getRecordsForLocation("Shared.java", 10).size)
     }

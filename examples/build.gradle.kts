@@ -44,12 +44,20 @@ tasks {
 
         // Run IDE with agent to capture markers
         jvmArgs(
-            "-javaagent:${project.rootProject.projectDir}/agent/build/libs/agent.jar"
+            "-javaagent:${project.rootProject.projectDir}/agent/build/libs/agent.jar",
         )
 
         // Set the project base directory for agent to construct traces path
         systemProperty(
-            "threading.highlighter.project.dir", "${project.projectDir}"
+            "threading.highlighter.project.dir",
+            "${project.projectDir}",
+        )
+
+        // Allow list of packages whose frames are captured: this demo module's own code.
+        // The agent records only frames under these packages (see IncludePackageFilter).
+        systemProperty(
+            "threading.highlighter.include.packages",
+            "com.example.threadingdemo",
         )
     }
 }

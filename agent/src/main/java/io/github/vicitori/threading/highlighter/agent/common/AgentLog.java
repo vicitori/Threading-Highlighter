@@ -23,8 +23,7 @@ public final class AgentLog {
 
     private static final Logger LOG = Logger.getLogger(LOGGER_NAME);
 
-    private AgentLog() {
-    }
+    private AgentLog() {}
 
     public static void debug(String message) {
         LOG.log(Level.FINE, message);

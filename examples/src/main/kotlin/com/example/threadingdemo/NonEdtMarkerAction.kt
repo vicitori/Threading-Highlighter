@@ -8,7 +8,6 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 
 class NonEdtMarkerAction : AnAction("Non-EDT Marker Only") {
-
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
         val application = ApplicationManager.getApplication()
@@ -28,8 +27,12 @@ class NonEdtMarkerAction : AnAction("Non-EDT Marker Only") {
         Thread.sleep(500)
     }
 
-    private fun showNotification(project: Project, message: String) {
-        NotificationGroupManager.getInstance()
+    private fun showNotification(
+        project: Project,
+        message: String,
+    ) {
+        NotificationGroupManager
+            .getInstance()
             .getNotificationGroup("Threading Highlighter")
             .createNotification(message, NotificationType.INFORMATION)
             .notify(project)

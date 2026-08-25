@@ -26,7 +26,9 @@ import kotlin.io.path.exists
  * reload, off the EDT.
  */
 @Service(Service.Level.PROJECT)
-class TraceManager(private val project: Project) {
+class TraceManager(
+    private val project: Project,
+) {
     private val repository = TraceRepository()
     private val stateService = MarkerStateService.getInstance(project)
 
@@ -62,8 +64,10 @@ class TraceManager(private val project: Project) {
         }.queue()
     }
 
-    fun getRecordsForLocation(fileName: String, lineNumber: Int): List<Pair<MarkerInfo, TraceRecord>> =
-        snapshot.getRecordsForLocation(fileName, lineNumber)
+    fun getRecordsForLocation(
+        fileName: String,
+        lineNumber: Int,
+    ): List<Pair<MarkerInfo, TraceRecord>> = snapshot.getRecordsForLocation(fileName, lineNumber)
 
     private fun loadSnapshot(): TraceSnapshot {
         val projectBasePath = project.basePath ?: return TraceSnapshot.EMPTY
@@ -73,9 +77,10 @@ class TraceManager(private val project: Project) {
         }
 
         // reading the project model off the EDT requires a read lock
-        val userPackages = ReadAction.compute<List<String>, RuntimeException> {
-            UserCodeFilter.getUserPackages(project)
-        }
+        val userPackages =
+            ReadAction.compute<List<String>, RuntimeException> {
+                UserCodeFilter.getUserPackages(project)
+            }
 
         val dataByMarker = LinkedHashMap<String, MarkerTraceData>()
         for (marker in Markers.getAll()) {
@@ -109,7 +114,7 @@ class TraceManager(private val project: Project) {
             projectName = project.name,
             projectPath = project.basePath ?: "<unknown>",
             tracesDir = tracesDir?.toString(),
-            tracesDirExists = tracesDir?.exists() ?: false
+            tracesDirExists = tracesDir?.exists() ?: false,
         )
     }
 }

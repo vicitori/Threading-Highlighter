@@ -30,44 +30,37 @@ public final class Markers {
             "com.intellij.util.SlowOperations",
             "assertSlowOperationsAreAllowed",
             "Slow Operation",
-            "Slow operations are allowed here. This indicates code that may perform I/O or heavy computation."
-    );
+            "Slow operations are allowed here. This indicates code that may perform I/O or heavy computation.");
 
     public static final MarkerInfo NON_EDT = new MarkerInfo(
             "com.intellij.openapi.application.impl.ApplicationImpl",
             "assertIsNonDispatchThread",
             "Non-EDT Thread",
-            "This code must NOT run on the EDT. Background/pooled thread required."
-    );
+            "This code must NOT run on the EDT. Background/pooled thread required.");
 
     public static final MarkerInfo EDT = new MarkerInfo(
             "com.intellij.openapi.application.impl.ApplicationImpl",
             "assertIsDispatchThread",
             "EDT Thread",
-            "This code must run on the EDT (Event Dispatch Thread). UI operations are allowed."
-    );
+            "This code must run on the EDT (Event Dispatch Thread). UI operations are allowed.");
 
     public static final MarkerInfo READ_ACCESS = new MarkerInfo(
             "com.intellij.openapi.application.impl.ApplicationImpl",
             "assertReadAccessAllowed",
             "Read Access",
-            "This code requires read access and must run inside a read action (see Application.runReadAction())."
-    );
+            "This code requires read access and must run inside a read action (see Application.runReadAction()).");
 
     public static final MarkerInfo WRITE_ACCESS = new MarkerInfo(
             "com.intellij.openapi.application.impl.ApplicationImpl",
             "assertWriteAccessAllowed",
             "Write Access",
-            "This code requires write access and must run inside a write action on the EDT (see Application.runWriteAction())."
-    );
+            "This code requires write access and must run inside a write action on the EDT (see Application.runWriteAction()).");
 
-    private static final List<MarkerInfo> ALL =
-            List.of(SLOW_OPERATION, NON_EDT, EDT, READ_ACCESS, WRITE_ACCESS);
+    private static final List<MarkerInfo> ALL = List.of(SLOW_OPERATION, NON_EDT, EDT, READ_ACCESS, WRITE_ACCESS);
 
     public static List<MarkerInfo> getAll() {
         return ALL;
     }
 
-    private Markers() {
-    }
+    private Markers() {}
 }
