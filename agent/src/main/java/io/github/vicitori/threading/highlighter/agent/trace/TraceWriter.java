@@ -52,7 +52,8 @@ public final class TraceWriter {
 
     // cap unique locations per marker so a permanently failing disk (records kept via
     // restoreFailed) cannot grow the buffer without bound; oldest entries are dropped
-    private static final int MAX_LOCATIONS_PER_MARKER = 10_000;
+    // package-private so tests can assert the boundary without duplicating the value
+    static final int MAX_LOCATIONS_PER_MARKER = 10_000;
 
     private final Path tracesDir;
     private final Map<String, Map<String, TraceRecord>> tracesByMarker = new ConcurrentHashMap<>();
@@ -100,6 +101,17 @@ public final class TraceWriter {
                         "ThreadingHighlighter-Shutdown"));
     }
 
+    // Package-private test seam: uses the given traces directory and honors the
+    // fresh-session vs append choice, but installs no periodic scheduler and no
+    // shutdown hook, so tests stay deterministic and do not leak background state.
+    TraceWriter(Path tracesDir, boolean appendSession) {
+        this.tracesDir = tracesDir;
+        this.scheduler = null;
+        if (!appendSession) {
+            clearPreviousSession();
+        }
+    }
+
     public void record(String markerFqn) {
         long timestamp = System.currentTimeMillis();
         if (throttled(markerFqn, timestamp)) {
@@ -107,7 +119,14 @@ public final class TraceWriter {
         }
         // capture() is the expensive part, so it runs only after the throttle check
         List<StackTraceElement> frames = stackCapture.capture();
+        recordFrames(markerFqn, frames, timestamp);
+    }
 
+    // Core buffering step, split out from record() as a test seam: it takes already
+    // captured frames and a fixed timestamp, so dedup and the per-marker capacity
+    // limit can be exercised deterministically without live stack capture or the
+    // wall clock.
+    void recordFrames(String markerFqn, List<StackTraceElement> frames, long timestamp) {
         Map<String, TraceRecord> traces = tracesByMarker.computeIfAbsent(markerFqn, k -> new LinkedHashMap<>());
         // lock only this marker's map, not the whole buffer, so different markers and
         // the flush thread do not contend on a single global lock
@@ -135,7 +154,19 @@ public final class TraceWriter {
         }
     }
 
-    private void flushAllOnce() {
+    // Package-private for tests: an isolated snapshot of one marker's buffered
+    // locations, taken under the same per-marker lock the writer uses.
+    Map<String, TraceRecord> snapshotBuffer(String markerFqn) {
+        Map<String, TraceRecord> traces = tracesByMarker.get(markerFqn);
+        if (traces == null) {
+            return new LinkedHashMap<>();
+        }
+        synchronized (traces) {
+            return new LinkedHashMap<>(traces);
+        }
+    }
+
+    void flushAllOnce() {
         int flushedRecords = 0;
         int flushedMarkers = 0;
         for (Map.Entry<String, Map<String, TraceRecord>> entry : tracesByMarker.entrySet()) {
@@ -169,7 +200,7 @@ public final class TraceWriter {
 
     // Returns failed writes to the marker buffer for a later retry, merging per key
     // (newest timestamp wins) so records added during the failed I/O are not lost.
-    private void restoreFailed(Map<String, TraceRecord> markerBuffer, Map<String, TraceRecord> drained) {
+    void restoreFailed(Map<String, TraceRecord> markerBuffer, Map<String, TraceRecord> drained) {
         synchronized (markerBuffer) {
             drained.forEach((key, oldRecord) -> markerBuffer.merge(
                     key,
@@ -199,7 +230,7 @@ public final class TraceWriter {
     }
 
     // Returns true if this marker was captured too recently and should be skipped.
-    private boolean throttled(String markerFqn, long now) {
+    boolean throttled(String markerFqn, long now) {
         if (minCaptureIntervalMillis <= 0) {
             return false;
         }
