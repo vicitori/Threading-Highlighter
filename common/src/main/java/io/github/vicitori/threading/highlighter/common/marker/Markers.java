@@ -23,8 +23,15 @@ import java.util.List;
  * recurse into itself or instrument non-assertion code. Extending coverage is a
  * matter of adding an entry here (the agent, filter, trace format and plugin are
  * all marker-agnostic).
+ *
+ * <p>Since platform build ~233 the internal calling code increasingly calls
+ * {@code ThreadingAssertions} directly instead of going through
+ * {@code ApplicationImpl}. Both classes are instrumented so the agent captures
+ * markers regardless of which path the platform takes.
  */
 public final class Markers {
+
+    // --- ApplicationImpl markers (legacy path, still used by plugin code) ---
 
     public static final MarkerInfo SLOW_OPERATION = new MarkerInfo(
             "com.intellij.util.SlowOperations",
@@ -56,7 +63,38 @@ public final class Markers {
             "Write Access",
             "This code requires write access and must run inside a write action on the EDT (see Application.runWriteAction()).");
 
-    private static final List<MarkerInfo> ALL = List.of(SLOW_OPERATION, NON_EDT, EDT, READ_ACCESS, WRITE_ACCESS);
+    // --- ThreadingAssertions markers (direct path used by platform internals) ---
+
+    private static final String THREADING_ASSERTIONS_CLASS =
+            "com.intellij.util.concurrency.ThreadingAssertions";
+
+    public static final MarkerInfo EDT_DIRECT = new MarkerInfo(
+            THREADING_ASSERTIONS_CLASS,
+            "assertEventDispatchThread",
+            "EDT Thread",
+            "This code must run on the EDT (Event Dispatch Thread). UI operations are allowed.");
+
+    public static final MarkerInfo NON_EDT_DIRECT = new MarkerInfo(
+            THREADING_ASSERTIONS_CLASS,
+            "assertBackgroundThread",
+            "Non-EDT Thread",
+            "This code must NOT run on the EDT. Background/pooled thread required.");
+
+    public static final MarkerInfo READ_ACCESS_DIRECT = new MarkerInfo(
+            THREADING_ASSERTIONS_CLASS,
+            "assertReadAccess",
+            "Read Access",
+            "This code requires read access and must run inside a read action (see Application.runReadAction()).");
+
+    public static final MarkerInfo WRITE_ACCESS_DIRECT = new MarkerInfo(
+            THREADING_ASSERTIONS_CLASS,
+            "assertWriteAccess",
+            "Write Access",
+            "This code requires write access and must run inside a write action on the EDT (see Application.runWriteAction()).");
+
+    private static final List<MarkerInfo> ALL = List.of(
+            SLOW_OPERATION, NON_EDT, EDT, READ_ACCESS, WRITE_ACCESS,
+            EDT_DIRECT, NON_EDT_DIRECT, READ_ACCESS_DIRECT, WRITE_ACCESS_DIRECT);
 
     public static List<MarkerInfo> getAll() {
         return ALL;

@@ -35,11 +35,22 @@ public final class ThreadingHighlighterAgent {
         install(inst);
     }
 
+    // Byte Buddy refuses class file versions newer than it officially knows (e.g. the
+    // Java 25 bytecode shipped by the latest JBR) unless experimental mode is enabled.
+    // Turning it on keeps the agent working on bleeding-edge IDE platforms instead of
+    // failing every instrumentation with IllegalArgumentException. The literal is
+    // relocated by the shadow jar together with the rest of net.bytebuddy, so it
+    // matches the property name Byte Buddy actually reads at runtime.
+    private static final String BYTE_BUDDY_EXPERIMENTAL_PROPERTY = "net.bytebuddy.experimental";
+
     private static void install(Instrumentation inst) {
         if (!INSTALLED.compareAndSet(false, true)) {
             AgentLog.info("Agent already installed, skipping duplicate initialization");
             return;
         }
+
+        // must run before any Byte Buddy class file version probing below
+        enableByteBuddyExperimentalIfUnset();
 
         MarkerAdvice.setWriter(new TraceWriter());
         AgentBuilder agent = configureAgent();
@@ -47,6 +58,12 @@ public final class ThreadingHighlighterAgent {
 
         for (MarkerInfo marker : markers) {
             instrumentMarker(agent, marker, inst);
+        }
+    }
+
+    private static void enableByteBuddyExperimentalIfUnset() {
+        if (System.getProperty(BYTE_BUDDY_EXPERIMENTAL_PROPERTY) == null) {
+            System.setProperty(BYTE_BUDDY_EXPERIMENTAL_PROPERTY, "true");
         }
     }
 
