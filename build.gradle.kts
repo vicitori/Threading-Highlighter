@@ -6,7 +6,7 @@ plugins {
     id("org.jetbrains.intellij.platform") version "2.10.5" apply false
     id("com.gradleup.shadow") version "8.3.6" apply false
     // Code formatting/linting, applied to every module below.
-    id("com.diffplug.spotless") version "7.0.4"
+    id("com.diffplug.spotless") version "8.10.2"
 }
 
 // Single source of truth for coordinates. Applied to every module below so the
