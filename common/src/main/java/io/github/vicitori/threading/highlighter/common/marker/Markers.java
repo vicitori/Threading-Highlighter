@@ -65,8 +65,7 @@ public final class Markers {
 
     // --- ThreadingAssertions markers (direct path used by platform internals) ---
 
-    private static final String THREADING_ASSERTIONS_CLASS =
-            "com.intellij.util.concurrency.ThreadingAssertions";
+    private static final String THREADING_ASSERTIONS_CLASS = "com.intellij.util.concurrency.ThreadingAssertions";
 
     public static final MarkerInfo EDT_DIRECT = new MarkerInfo(
             THREADING_ASSERTIONS_CLASS,
@@ -93,8 +92,15 @@ public final class Markers {
             "This code requires write access and must run inside a write action on the EDT (see Application.runWriteAction()).");
 
     private static final List<MarkerInfo> ALL = List.of(
-            SLOW_OPERATION, NON_EDT, EDT, READ_ACCESS, WRITE_ACCESS,
-            EDT_DIRECT, NON_EDT_DIRECT, READ_ACCESS_DIRECT, WRITE_ACCESS_DIRECT);
+            SLOW_OPERATION,
+            NON_EDT,
+            EDT,
+            READ_ACCESS,
+            WRITE_ACCESS,
+            EDT_DIRECT,
+            NON_EDT_DIRECT,
+            READ_ACCESS_DIRECT,
+            WRITE_ACCESS_DIRECT);
 
     public static List<MarkerInfo> getAll() {
         return ALL;

@@ -99,11 +99,8 @@ class TraceWriterConcurrencyTest {
 
         Set<String> keysOnDisk = readKeysFromDisk();
         assertEquals(
-                expectedKeys(),
-                keysOnDisk,
-                "no location may be lost or corrupted across concurrent record and flush");
-        assertTrue(
-                writer.snapshotBuffer(MARKER).isEmpty(), "buffer must be empty after the final flush");
+                expectedKeys(), keysOnDisk, "no location may be lost or corrupted across concurrent record and flush");
+        assertTrue(writer.snapshotBuffer(MARKER).isEmpty(), "buffer must be empty after the final flush");
     }
 
     private Set<String> readKeysFromDisk() throws Exception {

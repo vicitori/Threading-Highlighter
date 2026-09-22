@@ -24,8 +24,7 @@ class TraceRepositoryTest {
 
     private val repository = TraceRepository()
 
-    private fun record(className: String, line: Int, ts: Long): TraceRecord =
-        TraceRecord(className, "m", "App.java", line, ts)
+    private fun record(className: String, line: Int, ts: Long): TraceRecord = TraceRecord(className, "m", "App.java", line, ts)
 
     private fun writeLines(vararg lines: String): Path {
         val file = dir.resolve("EDT.jsonl")
