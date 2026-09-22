@@ -10,8 +10,8 @@ java {
 }
 
 dependencies {
-    implementation("net.bytebuddy:byte-buddy:1.15.11")
-    implementation("net.bytebuddy:byte-buddy-agent:1.15.11")
+    implementation("net.bytebuddy:byte-buddy:1.18.14")
+    implementation("net.bytebuddy:byte-buddy-agent:1.18.14")
 
     // Shared pure-Java model/codec/config. common has no Kotlin runtime, so depending
     // on it keeps the agent's classpath isolated from the host IDE.
