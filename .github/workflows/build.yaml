@@ -47,7 +47,7 @@ jobs:
         run: ./gradlew test --no-daemon
 
       - name: Publish test report
-        uses: mikepenz/action-junit-report@v5
+        uses: mikepenz/action-junit-report@v6
         if: ${{ !cancelled() }}    # publish results even when tests fail
         with:
           report_paths: '**/build/test-results/test/TEST-*.xml'
