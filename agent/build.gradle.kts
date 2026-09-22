@@ -17,7 +17,7 @@ dependencies {
     // on it keeps the agent's classpath isolated from the host IDE.
     implementation(project(":common"))
 
-    testImplementation(platform("org.junit:junit-bom:5.11.3"))
+    testImplementation(platform("org.junit:junit-bom:6.1.3"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
